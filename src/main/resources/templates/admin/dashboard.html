@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Dashboard - FoodHub</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── KPI Cards ── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.2rem; margin-bottom:2rem; }
+.kpi-card { background:white; border-radius:var(--radius-lg); padding:1.4rem 1.6rem; box-shadow:var(--shadow); display:flex; align-items:center; gap:1.2rem; position:relative; overflow:hidden; }
+.kpi-card::after { content:''; position:absolute; right:-20px; top:-20px; width:100px; height:100px; border-radius:50%; opacity:.08; }
+.kpi-card.orange::after { background:var(--primary); }
+.kpi-card.blue::after   { background:#3b82f6; }
+.kpi-card.purple::after { background:#8b5cf6; }
+.kpi-card.green::after  { background:#22c55e; }
+.kpi-card.red::after    { background:#ef4444; }
+.kpi-card.teal::after   { background:#14b8a6; }
+.kpi-icon { width:54px; height:54px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; }
+.kpi-icon.orange { background:#fff7ed; }
+.kpi-icon.blue   { background:#eff6ff; }
+.kpi-icon.purple { background:#f5f3ff; }
+.kpi-icon.green  { background:#f0fdf4; }
+.kpi-icon.red    { background:#fef2f2; }
+.kpi-icon.teal   { background:#f0fdfa; }
+.kpi-info h2 { font-size:1.7rem; font-weight:800; margin:0; line-height:1; }
+.kpi-info p  { font-size:.78rem; color:var(--text-muted); margin:.2rem 0 0; text-transform:uppercase; letter-spacing:.5px; }
+.kpi-trend { position:absolute; top:.8rem; right:.8rem; font-size:.7rem; font-weight:600; padding:.2rem .5rem; border-radius:20px; }
+.trend-up   { background:#dcfce7; color:#16a34a; }
+.trend-down { background:#fee2e2; color:#dc2626; }
+
+/* ── Charts grid ── */
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem; }
+.chart-card { background:white; border-radius:var(--radius-lg); padding:1.4rem; box-shadow:var(--shadow); }
+.chart-card h3 { font-family:'Playfair Display',serif; font-size:1rem; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+.chart-wrap { position:relative; height:220px; }
+
+/* ── Tables ── */
+.admin-table-card { background:white; border-radius:var(--radius-lg); box-shadow:var(--shadow); margin-bottom:1.5rem; overflow:hidden; }
+.admin-table-card .card-header { padding:1rem 1.5rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.admin-table-card .card-header h3 { font-family:'Playfair Display',serif; font-size:1rem; margin:0; }
+
+/* ── Quick action buttons ── */
+.quick-actions { display:flex; gap:.8rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+
+@media(max-width:900px) { .charts-grid { grid-template-columns:1fr; } .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:600px) { .kpi-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span>
+    <span style="font-size:.7rem; background:var(--accent); color:#1a1a1a; padding:.1rem .5rem; border-radius:6px; margin-left:.4rem;">ADMIN</span>
+  </a>
+  <ul class="nav-links">
+    <li><a th:href="@{/}">View Site</a></li>
+    <li><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+
+<div class="layout-admin">
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">Dashboard</div>
+    <a th:href="@{/admin/dashboard}" class="active"><i class="fa fa-gauge-high"></i> Overview</a>
+    <div class="sidebar-section">Management</div>
+    <a th:href="@{/admin/users}"><i class="fa fa-users"></i> Users</a>
+    <a th:href="@{/admin/restaurants}"><i class="fa fa-store"></i> Restaurants</a>
+    <a th:href="@{/admin/food}"><i class="fa fa-utensils"></i> Food Items</a>
+    <a th:href="@{/admin/orders}"><i class="fa fa-list-alt"></i> Orders</a>
+    <a th:href="@{/admin/payments}"><i class="fa fa-credit-card"></i> Payments</a>
+    <a th:href="@{/admin/reviews}"><i class="fa fa-star"></i> Reviews</a>
+    <div class="sidebar-section">Site</div>
+    <a th:href="@{/}"><i class="fa fa-globe"></i> View Site</a>
+    <a th:href="@{/logout}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="admin-main">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.8rem; flex-wrap:wrap; gap:1rem;">
+      <div>
+        <h1 style="font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:.2rem;">Dashboard Overview</h1>
+        <p style="color:var(--text-muted);">Welcome back, <strong th:text="${user.username}">Admin</strong>! Here's your business at a glance.</p>
+      </div>
+      <div style="display:flex; gap:.7rem;">
+        <a th:href="@{/admin/restaurants/add}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Add Restaurant</a>
+        <a th:href="@{/admin/food/add}" class="btn btn-accent btn-sm"><i class="fa fa-plus"></i> Add Food</a>
+      </div>
+    </div>
+
+    <!-- ═══ KPI CARDS ═══ -->
+    <div class="kpi-grid">
+      <div class="kpi-card orange">
+        <div class="kpi-icon orange"><i class="fa fa-users" style="color:var(--primary);"></i></div>
+        <div class="kpi-info">
+          <h2 th:text="${totalUsers}">0</h2>
+          <p>Total Users</p>
+        </div>
+        <span class="kpi-trend trend-up">👥 Active</span>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-icon blue"><i class="fa fa-store" style="color:#3b82f6;"></i></div>
+        <div class="kpi-info">
+          <h2 th:text="${totalRestaurants}">0</h2>
+          <p>Restaurants</p>
+        </div>
+        <span class="kpi-trend trend-up">🍽️ Live</span>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-icon purple"><i class="fa fa-receipt" style="color:#8b5cf6;"></i></div>
+        <div class="kpi-info">
+          <h2 th:text="${totalOrders}">0</h2>
+          <p>Total Orders</p>
+        </div>
+        <span class="kpi-trend trend-up">📦 All time</span>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-icon green"><i class="fa fa-money-bill-wave" style="color:#22c55e;"></i></div>
+        <div class="kpi-info">
+          <h2 style="font-size:1.1rem;" th:text="'LKR ' + ${#numbers.formatDecimal(totalRevenue,0,'COMMA',0,'POINT')}">LKR 0</h2>
+          <p>Revenue</p>
+        </div>
+        <span class="kpi-trend trend-up">💰 Earned</span>
+      </div>
+      <div class="kpi-card teal">
+        <div class="kpi-icon teal"><i class="fa fa-check-circle" style="color:#14b8a6;"></i></div>
+        <div class="kpi-info">
+          <h2 th:text="${deliveredOrders}">0</h2>
+          <p>Delivered</p>
+        </div>
+        <span class="kpi-trend trend-up">✅ Done</span>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-icon red"><i class="fa fa-clock" style="color:#ef4444;"></i></div>
+        <div class="kpi-info">
+          <h2 th:text="${pendingOrders}">0</h2>
+          <p>Pending Orders</p>
+        </div>
+        <span class="kpi-trend trend-down" th:if="${pendingOrders > 0}">⚠️ Action needed</span>
+        <span class="kpi-trend trend-up"   th:if="${pendingOrders == 0}">✅ Clear</span>
+      </div>
+    </div>
+
+    <!-- ═══ CHARTS ═══ -->
+    <div class="charts-grid">
+
+      <!-- Order Status Doughnut -->
+      <div class="chart-card">
+        <h3><i class="fa fa-chart-pie" style="color:var(--primary);"></i> Orders by Status</h3>
+        <div class="chart-wrap">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Revenue by Restaurant Bar -->
+      <div class="chart-card">
+        <h3><i class="fa fa-chart-bar" style="color:#3b82f6;"></i> Revenue by Restaurant (Top 5)</h3>
+        <div class="chart-wrap">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Food Items distribution -->
+      <div class="chart-card">
+        <h3><i class="fa fa-chart-line" style="color:#8b5cf6;"></i> Platform Summary</h3>
+        <div class="chart-wrap">
+          <canvas id="summaryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Order completion rate -->
+      <div class="chart-card">
+        <h3><i class="fa fa-circle-check" style="color:#22c55e;"></i> Order Completion Rate</h3>
+        <div class="chart-wrap">
+          <canvas id="completionChart"></canvas>
+        </div>
+        <div style="text-align:center; margin-top:.5rem;">
+          <span style="font-size:2rem; font-weight:800; color:#22c55e;"
+                th:text="${totalOrders > 0} ? ${#numbers.formatDecimal(deliveredOrders * 100.0 / totalOrders, 1, 1)} + '%' : '0%'">0%</span>
+          <p style="color:var(--text-muted); font-size:.8rem; margin:.2rem 0 0;">completion rate</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RECENT ORDERS ═══ -->
+    <div class="admin-table-card">
+      <div class="card-header">
+        <h3><i class="fa fa-list-alt" style="color:var(--primary);"></i> Recent Orders</h3>
+        <a th:href="@{/admin/orders}" style="color:var(--primary); font-size:.85rem; font-weight:600;">View All →</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Restaurant</th>
+              <th>Amount</th>
+              <th>Discount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="o : ${recentOrders}">
+              <td style="font-family:monospace; font-size:.8rem;" th:text="${o.id}">ORD</td>
+              <td th:text="${o.customerId}">Customer</td>
+              <td th:text="${o.restaurantName}">Restaurant</td>
+              <td style="font-weight:700;" th:text="'LKR ' + ${#numbers.formatDecimal(o.totalAmount,1,0)}">LKR</td>
+              <td>
+                <span th:if="${o.discountAmount > 0}" style="color:#dc2626; font-size:.8rem; font-weight:600;"
+                      th:text="'− LKR ' + ${#numbers.formatDecimal(o.discountAmount,1,0)}">−</span>
+                <span th:if="${o.discountAmount == 0}" style="color:var(--text-muted); font-size:.8rem;">—</span>
+              </td>
+              <td><span th:class="'status-badge status-' + ${o.status}" th:text="${o.statusDisplay}">Status</span></td>
+              <td>
+                <form th:action="@{'/admin/orders/status/' + ${o.id}}" method="post" style="display:flex; gap:.4rem; align-items:center;">
+                  <select name="status" class="form-select" style="width:auto; padding:.3rem .5rem; font-size:.8rem;">
+                    <option value="PENDING"          th:selected="${o.status == 'PENDING'}">Pending</option>
+                    <option value="CONFIRMED"        th:selected="${o.status == 'CONFIRMED'}">Confirmed</option>
+                    <option value="PREPARING"        th:selected="${o.status == 'PREPARING'}">Preparing</option>
+                    <option value="OUT_FOR_DELIVERY" th:selected="${o.status == 'OUT_FOR_DELIVERY'}">Out for Delivery</option>
+                    <option value="DELIVERED"        th:selected="${o.status == 'DELIVERED'}">Delivered</option>
+                    <option value="CANCELLED"        th:selected="${o.status == 'CANCELLED'}">Cancelled</option>
+                  </select>
+                  <button class="btn btn-sm btn-primary">Update</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ RECENT REVIEWS ═══ -->
+    <div class="admin-table-card">
+      <div class="card-header">
+        <h3><i class="fa fa-star" style="color:#f59e0b;"></i> Recent Reviews</h3>
+        <a th:href="@{/admin/reviews}" style="color:var(--primary); font-size:.85rem; font-weight:600;">Manage →</a>
+      </div>
+      <div style="padding:1rem 1.5rem;">
+        <div th:each="rv : ${recentReviews}"
+             style="display:flex; justify-content:space-between; align-items:center; padding:.8rem 0; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:.5rem;">
+          <div style="display:flex; align-items:center; gap:.8rem;">
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.9rem; flex-shrink:0;"
+                 th:text="${#strings.substring(rv.customerName,0,1)}">K</div>
+            <div>
+              <strong th:text="${rv.customerName}">Customer</strong>
+              <span style="color:var(--text-muted); font-size:.8rem;"> reviewed </span>
+              <span style="font-weight:600;" th:text="${rv.restaurantName}">Restaurant</span>
+              <div style="color:#f59e0b; font-size:.85rem;" th:text="${rv.starDisplay}">★★★★★</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:.6rem;">
+            <span th:class="${rv.status == 'ACTIVE'} ? 'badge badge-success' : 'badge badge-danger'"
+                  th:text="${rv.status}">Active</span>
+          </div>
+        </div>
+        <div th:if="${#lists.isEmpty(recentReviews)}"
+             style="text-align:center; padding:2rem; color:var(--text-muted);">No reviews yet.</div>
+      </div>
+    </div>
+
+    <!-- ═══ MANAGEMENT QUICK LINKS ═══ -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-top:1rem;">
+      <a th:href="@{/admin/users}" style="text-decoration:none;">
+        <div style="background:white; border-radius:var(--radius-lg); padding:1.5rem; text-align:center; box-shadow:var(--shadow); transition:.2s; border-top:4px solid var(--primary);">
+          <div style="font-size:2rem; margin-bottom:.5rem;">👥</div>
+          <div style="font-weight:700;">User Management</div>
+          <div style="font-size:.8rem; color:var(--text-muted);">[[${totalUsers}]] users</div>
+        </div>
+      </a>
+      <a th:href="@{/admin/restaurants}" style="text-decoration:none;">
+        <div style="background:white; border-radius:var(--radius-lg); padding:1.5rem; text-align:center; box-shadow:var(--shadow); transition:.2s; border-top:4px solid #3b82f6;">
+          <div style="font-size:2rem; margin-bottom:.5rem;">🍽️</div>
+          <div style="font-weight:700;">Restaurant Control</div>
+          <div style="font-size:.8rem; color:var(--text-muted);">[[${totalRestaurants}]] restaurants</div>
+        </div>
+      </a>
+      <a th:href="@{/admin/orders}" style="text-decoration:none;">
+        <div style="background:white; border-radius:var(--radius-lg); padding:1.5rem; text-align:center; box-shadow:var(--shadow); transition:.2s; border-top:4px solid #8b5cf6;">
+          <div style="font-size:2rem; margin-bottom:.5rem;">📦</div>
+          <div style="font-weight:700;">Order Management</div>
+          <div style="font-size:.8rem; color:var(--text-muted);">[[${totalOrders}]] orders</div>
+        </div>
+      </a>
+      <a th:href="@{/admin/reviews}" style="text-decoration:none;">
+        <div style="background:white; border-radius:var(--radius-lg); padding:1.5rem; text-align:center; box-shadow:var(--shadow); transition:.2s; border-top:4px solid #f59e0b;">
+          <div style="font-size:2rem; margin-bottom:.5rem;">⭐</div>
+          <div style="font-weight:700;">Review Panel</div>
+          <div style="font-size:.8rem; color:var(--text-muted);">Moderate reviews</div>
+        </div>
+      </a>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ CHART.JS SCRIPTS ═══ -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+
+// Data from Thymeleaf
+const ordersByStatus    = [[${ordersByStatus}]];
+const revenueByRest     = [[${revenueByRestaurant}]];
+const totalOrders       = [[${totalOrders}]];
+const deliveredOrders   = [[${deliveredOrders}]];
+const pendingOrders     = [[${pendingOrders}]];
+const cancelledOrders   = [[${cancelledOrders}]];
+const totalRestaurants  = [[${totalRestaurants}]];
+const totalUsers        = [[${totalUsers}]];
+const totalFoodItems    = [[${totalFoodItems}]];
+
+// ── Chart defaults ──
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size   = 12;
+
+// ── 1. Orders by Status — Doughnut ──
+const statusLabels = Object.keys(ordersByStatus);
+const statusData   = Object.values(ordersByStatus);
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: statusLabels,
+    datasets: [{
+      data: statusData,
+      backgroundColor: ['#f59e0b','#3b82f6','#a855f7','#f97316','#22c55e','#ef4444'],
+      borderWidth: 2,
+      borderColor: '#fff',
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { boxWidth: 12, padding: 12 } }
+    },
+    cutout: '65%'
+  }
+});
+
+// ── 2. Revenue by Restaurant — Bar ──
+const restLabels  = Object.keys(revenueByRest);
+const restData    = Object.values(revenueByRest);
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: restLabels.length ? restLabels : ['No data yet'],
+    datasets: [{
+      label: 'Revenue (LKR)',
+      data: restData.length ? restData : [0],
+      backgroundColor: ['#f97316','#3b82f6','#8b5cf6','#22c55e','#ef4444'],
+      borderRadius: 8,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#f3f4f6' },
+           ticks: { callback: v => 'LKR ' + v.toLocaleString() } },
+      x: { grid: { display: false },
+           ticks: { maxRotation: 30, font: { size: 10 } } }
+    }
+  }
+});
+
+// ── 3. Platform summary — Horizontal bar ──
+new Chart(document.getElementById('summaryChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Users', 'Restaurants', 'Food Items', 'Total Orders'],
+    datasets: [{
+      label: 'Count',
+      data: [totalUsers, totalRestaurants, totalFoodItems, totalOrders],
+      backgroundColor: ['#f97316','#3b82f6','#8b5cf6','#22c55e'],
+      borderRadius: 8,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// ── 4. Completion rate — Gauge-style doughnut ──
+const completionPct = totalOrders > 0 ? Math.round(deliveredOrders * 100 / totalOrders) : 0;
+new Chart(document.getElementById('completionChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Delivered', 'Pending', 'Cancelled', 'Other'],
+    datasets: [{
+      data: [deliveredOrders, pendingOrders, cancelledOrders,
+             Math.max(0, totalOrders - deliveredOrders - pendingOrders - cancelledOrders)],
+      backgroundColor: ['#22c55e', '#f59e0b', '#ef4444', '#d1d5db'],
+      borderWidth: 2, borderColor: '#fff', hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } }
+    },
+    cutout: '60%'
+  }
+});
+
+/*]]>*/
+</script>
+</body>
+</html>
