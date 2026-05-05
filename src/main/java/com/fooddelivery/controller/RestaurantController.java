@@ -26,7 +26,7 @@ public class RestaurantController {
                        @RequestParam(defaultValue = "") String city) {
         model.addAttribute("user", session.getAttribute("user"));
 
-        java.util.List<Restaurant> restaurants;
+        java.util.List<com.fooddelivery.model.Restaurant> restaurants;
         if (!search.isEmpty()) {
             restaurants = restaurantService.searchRestaurants(search);
         } else if (!type.isEmpty()) {
@@ -48,7 +48,7 @@ public class RestaurantController {
 
     @GetMapping("/restaurants/{id}")
     public String detail(@PathVariable String id, HttpSession session, Model model) {
-        Restaurant r = restaurantService.findById(id);
+        com.fooddelivery.model.Restaurant r = restaurantService.findById(id);
         if (r == null) return "redirect:/restaurants";
 
         model.addAttribute("user", session.getAttribute("user"));
@@ -65,10 +65,10 @@ public class RestaurantController {
 
     @GetMapping("/admin/restaurants/add")
     public String addPage(HttpSession session, Model model) {
-        com.fooddelivery.model.User u = (com.fooddelivery.model.User) session.getAttribute("user");
+        User u = (User) session.getAttribute("user");
         if (u == null || !"ADMIN".equals(u.getRole())) return "redirect:/login";
         model.addAttribute("user", u);
-        model.addAttribute("restaurant", new Restaurant());
+        model.addAttribute("restaurant", new com.fooddelivery.model.Restaurant());
         return "admin/restaurant-form";
     }
 
@@ -90,14 +90,14 @@ public class RestaurantController {
                       @RequestParam(defaultValue = "") String discountLabel,
                       HttpSession session, RedirectAttributes ra) {
 
-        com.fooddelivery.model.User u = (com.fooddelivery.model.User) session.getAttribute("user");
+        User u = (User) session.getAttribute("user");
         if (u == null || !"ADMIN".equals(u.getRole())) return "redirect:/login";
 
         if (imageUrl.isEmpty()) {
             imageUrl = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600";
         }
 
-        Restaurant r = new Restaurant(null, name, address, city, phone, cuisine, type,
+        com.fooddelivery.model.Restaurant r = new com.fooddelivery.model.Restaurant(null, name, address, city, phone, cuisine, type,
                 rating, isOpen, imageUrl, description, openTime, closeTime, deliveryFee);
         r.setDiscountPercent(discountPercent);
         r.setDiscountLabel(discountLabel.isEmpty() ? null : discountLabel);
@@ -110,9 +110,9 @@ public class RestaurantController {
 
     @GetMapping("/admin/restaurants/edit/{id}")
     public String editPage(@PathVariable String id, HttpSession session, Model model) {
-        com.fooddelivery.model.User u = (com.fooddelivery.model.User) session.getAttribute("user");
+        User u = (User) session.getAttribute("user");
         if (u == null || !"ADMIN".equals(u.getRole())) return "redirect:/login";
-        Restaurant r = restaurantService.findById(id);
+        com.fooddelivery.model.Restaurant r = restaurantService.findById(id);
         if (r == null) return "redirect:/admin/restaurants";
         model.addAttribute("user", u);
         model.addAttribute("restaurant", r);
@@ -138,10 +138,10 @@ public class RestaurantController {
                        @RequestParam(defaultValue = "") String discountLabel,
                        HttpSession session, RedirectAttributes ra) {
 
-        com.fooddelivery.model.User u = (com.fooddelivery.model.User) session.getAttribute("user");
+        User u = (User) session.getAttribute("user");
         if (u == null || !"ADMIN".equals(u.getRole())) return "redirect:/login";
 
-        Restaurant r = new Restaurant(id, name, address, city, phone, cuisine, type,
+        com.fooddelivery.model.Restaurant r = new com.fooddelivery.model.Restaurant(id, name, address, city, phone, cuisine, type,
                 rating, isOpen, imageUrl, description, openTime, closeTime, deliveryFee);
         r.setDiscountPercent(discountPercent);
         r.setDiscountLabel(discountLabel.isEmpty() ? null : discountLabel);
@@ -154,7 +154,7 @@ public class RestaurantController {
 
     @PostMapping("/admin/restaurants/delete/{id}")
     public String delete(@PathVariable String id, HttpSession session, RedirectAttributes ra) {
-        com.fooddelivery.model.User u = (com.fooddelivery.model.User) session.getAttribute("user");
+        User u = (User) session.getAttribute("user");
         if (u == null || !"ADMIN".equals(u.getRole())) return "redirect:/login";
         foodItemService.deleteByRestaurant(id);
         restaurantService.deleteRestaurant(id);
@@ -167,7 +167,7 @@ public class RestaurantController {
     @GetMapping("/admin/restaurants")
     public String adminList(HttpSession session, Model model,
                             @RequestParam(defaultValue = "") String search) {
-        com.fooddelivery.model.User u = (com.fooddelivery.model.User) session.getAttribute("user");
+        User u = (User) session.getAttribute("user");
         if (u == null || !"ADMIN".equals(u.getRole())) return "redirect:/login";
         model.addAttribute("user", u);
         if (!search.isEmpty()) {
