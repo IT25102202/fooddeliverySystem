@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edit Review - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .star-rating { display:flex; gap:.5rem; flex-direction:row-reverse; justify-content:flex-end; }
+    .star-rating input { display:none; }
+    .star-rating label { font-size:2.5rem; color:#d1d5db; cursor:pointer; transition:.15s; }
+    .star-rating label:hover, .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label { color:#f59e0b; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/review/my}">My Reviews</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="page-header">
+  <h1><i class="fa fa-edit"></i> Edit Review</h1>
+  <p th:text="${review.restaurantName}">Restaurant</p>
+</div>
+<div class="section" style="max-width:600px;">
+  <div class="card fade-in" style="border-radius:var(--radius-lg);">
+    <div class="card-body" style="padding:2rem;">
+      <form method="post" th:action="@{'/review/edit/' + ${review.id}}">
+        <div class="form-group">
+          <label class="form-label" style="font-size:1rem;">Your Rating</label>
+          <div class="star-rating">
+            <input type="radio" id="star5" name="rating" value="5" th:checked="${review.rating == 5}"/><label for="star5">★</label>
+            <input type="radio" id="star4" name="rating" value="4" th:checked="${review.rating == 4}"/><label for="star4">★</label>
+            <input type="radio" id="star3" name="rating" value="3" th:checked="${review.rating == 3}"/><label for="star3">★</label>
+            <input type="radio" id="star2" name="rating" value="2" th:checked="${review.rating == 2}"/><label for="star2">★</label>
+            <input type="radio" id="star1" name="rating" value="1" th:checked="${review.rating == 1}"/><label for="star1">★</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Review</label>
+          <textarea name="comment" class="form-control" rows="5" required minlength="10" th:text="${review.comment}"></textarea>
+        </div>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> Update Review</button>
+          <a th:href="@{/review/my}" class="btn btn-outline">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+</body>
+</html>
