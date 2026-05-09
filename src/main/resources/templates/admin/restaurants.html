@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Restaurants - Admin - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span>
+    <span style="font-size:.7rem;background:var(--accent);color:#1a1a1a;padding:.1rem .5rem;border-radius:6px;margin-left:.4rem;">ADMIN</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/}">View Site</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="layout-admin">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">Dashboard</div>
+    <a th:href="@{/admin/dashboard}"><i class="fa fa-gauge-high"></i> Overview</a>
+    <div class="sidebar-section">Management</div>
+    <a th:href="@{/admin/users}"><i class="fa fa-users"></i> Users</a>
+    <a th:href="@{/admin/restaurants}" class="active"><i class="fa fa-store"></i> Restaurants</a>
+    <a th:href="@{/admin/food}"><i class="fa fa-utensils"></i> Food Items</a>
+    <a th:href="@{/admin/orders}"><i class="fa fa-list-alt"></i> Orders</a>
+    <a th:href="@{/admin/payments}"><i class="fa fa-credit-card"></i> Payments</a>
+    <a th:href="@{/admin/reviews}"><i class="fa fa-star"></i> Reviews</a>
+    <div class="sidebar-section">Site</div>
+    <a th:href="@{/}"><i class="fa fa-globe"></i> View Site</a>
+    <a th:href="@{/logout}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <main class="admin-main">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;"><i class="fa fa-store" style="color:var(--primary)"></i> Restaurant Management</h1>
+      <a th:href="@{/admin/restaurants/add}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Restaurant</a>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success"><i class="fa fa-circle-check"></i> <span th:text="${success}"></span></div>
+    <div th:if="${error}"   class="alert alert-error"><i class="fa fa-circle-exclamation"></i> <span th:text="${error}"></span></div>
+
+    <!-- Search -->
+    <form th:action="@{/admin/restaurants}" method="get" style="display:flex;gap:1rem;margin-bottom:1.5rem;">
+      <input type="text" name="search" class="form-control" style="max-width:360px;" placeholder="Search restaurants..." th:value="${search}"/>
+      <button class="btn btn-primary"><i class="fa fa-search"></i> Search</button>
+      <a th:href="@{/admin/restaurants}" class="btn btn-outline">Clear</a>
+    </form>
+
+    <div class="card" style="border-radius:var(--radius-lg);">
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr><th>Image</th><th>Name</th><th>Cuisine</th><th>City</th><th>Type</th><th>Rating</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+          <tr th:each="r : ${restaurants}">
+            <td>
+              <img th:src="${r.imageUrl}" th:alt="${r.name}"
+                   style="width:56px;height:44px;object-fit:cover;border-radius:8px;"
+                   onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100'"/>
+            </td>
+            <td><strong th:text="${r.name}">Name</strong></td>
+            <td th:text="${r.cuisine}">Cuisine</td>
+            <td th:text="${r.city}">City</td>
+            <td>
+                <span class="badge"
+                      th:classappend="${r.type=='VEG'}?'badge-veg':(${r.type=='NONVEG'}?'badge-nonveg':'badge-both')"
+                      th:text="${r.type}">TYPE</span>
+            </td>
+            <td><span class="rating"><i class="fa fa-star"></i> [[${r.rating}]]</span></td>
+            <td>
+              <span th:if="${r.open}"   class="badge badge-success">Open</span>
+              <span th:unless="${r.open}" class="badge badge-danger">Closed</span>
+            </td>
+            <td style="white-space:nowrap;">
+              <a th:href="@{'/admin/restaurants/edit/' + ${r.id}}" class="btn btn-sm btn-outline" style="margin-right:.3rem;">
+                <i class="fa fa-edit"></i> Edit
+              </a>
+              <form th:action="@{'/admin/restaurants/delete/' + ${r.id}}" method="post"
+                    style="display:inline;" onsubmit="return confirm('Delete this restaurant and all its food items?')">
+                <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i> Delete</button>
+              </form>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
+      Total: <strong th:text="${#lists.size(restaurants)}">0</strong> restaurants
+    </p>
+  </main>
+</div>
+</body>
+</html>
