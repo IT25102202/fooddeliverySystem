@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reviews - Admin - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span>
+    <span style="font-size:.7rem;background:var(--accent);color:#1a1a1a;padding:.1rem .5rem;border-radius:6px;margin-left:.4rem;">ADMIN</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/}">View Site</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="layout-admin">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">Dashboard</div>
+    <a th:href="@{/admin/dashboard}"><i class="fa fa-gauge-high"></i> Overview</a>
+    <div class="sidebar-section">Management</div>
+    <a th:href="@{/admin/users}"><i class="fa fa-users"></i> Users</a>
+    <a th:href="@{/admin/restaurants}"><i class="fa fa-store"></i> Restaurants</a>
+    <a th:href="@{/admin/food}"><i class="fa fa-utensils"></i> Food Items</a>
+    <a th:href="@{/admin/orders}"><i class="fa fa-list-alt"></i> Orders</a>
+    <a th:href="@{/admin/payments}"><i class="fa fa-credit-card"></i> Payments</a>
+    <a th:href="@{/admin/reviews}" class="active"><i class="fa fa-star"></i> Reviews</a>
+    <div class="sidebar-section">Site</div>
+    <a th:href="@{/}"><i class="fa fa-globe"></i> View Site</a>
+    <a th:href="@{/logout}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <main class="admin-main">
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;margin-bottom:1.5rem;">
+      <i class="fa fa-star" style="color:var(--primary)"></i> Review Management (Admin Panel)
+    </h1>
+
+    <div th:if="${success}" class="alert alert-success"><i class="fa fa-circle-check"></i> <span th:text="${success}"></span></div>
+
+    <div class="card" style="border-radius:var(--radius-lg);">
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr><th>ID</th><th>Customer</th><th>Restaurant</th><th>Rating</th><th>Comment</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+          <tr th:each="rv : ${reviews}">
+            <td style="font-family:monospace;font-size:.75rem;" th:text="${rv.id}">REV</td>
+            <td style="font-size:.85rem;" th:text="${rv.customerName}">Customer</td>
+            <td style="font-size:.82rem;" th:text="${rv.restaurantName}">Restaurant</td>
+            <td>
+              <span class="stars" style="font-size:.9rem;" th:text="${rv.starDisplay}">★★★★★</span>
+            </td>
+            <td style="font-size:.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                th:text="${rv.comment}">Comment</td>
+            <td>
+              <span th:class="${rv.status=='ACTIVE'}?'badge badge-success':'badge badge-danger'" th:text="${rv.status}">Active</span>
+            </td>
+            <td style="font-size:.75rem;" th:text="${rv.reviewDateTime}">Date</td>
+            <td style="white-space:nowrap;">
+              <!-- Hide -->
+              <form th:if="${rv.status=='ACTIVE'}" th:action="@{'/admin/reviews/hide/' + ${rv.id}}" method="post" style="display:inline;">
+                <button class="btn btn-sm btn-warning" style="margin-right:.2rem;" title="Hide Review">
+                  <i class="fa fa-eye-slash"></i>
+                </button>
+              </form>
+              <!-- Restore -->
+              <form th:if="${rv.status=='HIDDEN'}" th:action="@{'/admin/reviews/restore/' + ${rv.id}}" method="post" style="display:inline;">
+                <button class="btn btn-sm btn-success" style="margin-right:.2rem;" title="Restore Review">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </form>
+              <!-- Delete Permanently -->
+              <form th:action="@{'/admin/reviews/delete/' + ${rv.id}}" method="post"
+                    style="display:inline;" onsubmit="return confirm('Permanently delete this review?')">
+                <button class="btn btn-sm btn-danger" title="Delete Review">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
+      Total: <strong th:text="${#lists.size(reviews)}">0</strong> reviews
+    </p>
+  </main>
+</div>
+</body>
+</html>
