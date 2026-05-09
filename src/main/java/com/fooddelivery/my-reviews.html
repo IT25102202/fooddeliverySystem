@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Reviews - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/}">Home</a></li>
+    <li><a th:href="@{/order/history}">My Orders</a></li>
+    <li><a th:href="@{/review/my}" class="active">My Reviews</a></li>
+    <li><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="page-header">
+  <h1><i class="fa fa-star"></i> My Reviews</h1>
+  <p>All your restaurant reviews</p>
+</div>
+<div class="section">
+  <div th:if="${success}" class="alert alert-success"><i class="fa fa-circle-check"></i> <span th:text="${success}"></span></div>
+  <div th:if="${#lists.isEmpty(reviews)}" style="text-align:center; padding:4rem 2rem;">
+    <div style="font-size:4rem; margin-bottom:1rem;">⭐</div>
+    <h3 style="font-family:'Playfair Display',serif; margin-bottom:.5rem;">No Reviews Yet</h3>
+    <p style="color:var(--text-muted); margin-bottom:1.5rem;">After ordering, you can leave reviews for restaurants.</p>
+    <a th:href="@{/restaurants}" class="btn btn-primary btn-lg">Browse Restaurants</a>
+  </div>
+
+  <div class="grid-2">
+    <div th:each="rv : ${reviews}" class="card fade-in" style="border-radius:var(--radius-lg);">
+      <div class="card-body" style="padding:1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:.8rem; flex-wrap:wrap; gap:.5rem;">
+          <div>
+            <h3 style="font-family:'Playfair Display',serif; font-size:1.1rem;" th:text="${rv.restaurantName}">Restaurant</h3>
+            <div style="font-size:.78rem; color:var(--text-muted);" th:text="${rv.reviewDateTime}">Date</div>
+          </div>
+          <div class="stars" style="font-size:1.2rem;" th:text="${rv.starDisplay}">★★★★★</div>
+        </div>
+        <p style="color:var(--text-muted); font-size:.9rem; margin-bottom:1rem; font-style:italic;" >"[[${rv.comment}]]"</p>
+        <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+          <a th:href="@{'/review/edit/' + ${rv.id}}" class="btn btn-outline btn-sm"><i class="fa fa-edit"></i> Edit</a>
+          <form th:action="@{'/review/delete/' + ${rv.id}}" method="post" onsubmit="return confirm('Delete this review?')">
+            <button class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+</body>
+</html>
