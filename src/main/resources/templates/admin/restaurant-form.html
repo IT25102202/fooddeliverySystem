@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Restaurant Form - Admin - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span>
+    <span style="font-size:.7rem;background:var(--accent);color:#1a1a1a;padding:.1rem .5rem;border-radius:6px;margin-left:.4rem;">ADMIN</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/admin/restaurants}">← Back to Restaurants</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="layout-admin">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">Dashboard</div>
+    <a th:href="@{/admin/dashboard}"><i class="fa fa-gauge-high"></i> Overview</a>
+    <div class="sidebar-section">Management</div>
+    <a th:href="@{/admin/users}"><i class="fa fa-users"></i> Users</a>
+    <a th:href="@{/admin/restaurants}" class="active"><i class="fa fa-store"></i> Restaurants</a>
+    <a th:href="@{/admin/food}"><i class="fa fa-utensils"></i> Food Items</a>
+    <a th:href="@{/admin/orders}"><i class="fa fa-list-alt"></i> Orders</a>
+    <a th:href="@{/admin/payments}"><i class="fa fa-credit-card"></i> Payments</a>
+    <a th:href="@{/admin/reviews}"><i class="fa fa-star"></i> Reviews</a>
+    <div class="sidebar-section">Site</div>
+    <a th:href="@{/}"><i class="fa fa-globe"></i> View Site</a>
+    <a th:href="@{/logout}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <main class="admin-main">
+    <div style="max-width:760px;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;margin-bottom:1.5rem;">
+        <i class="fa fa-store" style="color:var(--primary)"></i>
+        <span th:text="${editMode != null and editMode} ? 'Edit Restaurant' : 'Add New Restaurant'">Form</span>
+      </h1>
+
+      <div class="card fade-in" style="border-radius:var(--radius-lg);">
+        <div class="card-body" style="padding:2rem;">
+          <!-- ADD form -->
+          <form th:if="${restaurant.id == null}" method="post" th:action="@{/admin/restaurants/add}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Restaurant Name *</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. The Curry House" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone *</label>
+                <input type="text" name="phone" class="form-control" placeholder="011XXXXXXX" required/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address *</label>
+              <input type="text" name="address" class="form-control" placeholder="Street address" required/>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">City *</label>
+                <select name="city" class="form-select" required>
+                  <option value="">Select City</option>
+                  <option value="Colombo">Colombo</option>
+                  <option value="Kandy">Kandy</option>
+                  <option value="Galle">Galle</option>
+                  <option value="Jaffna">Jaffna</option>
+                  <option value="Negombo">Negombo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cuisine *</label>
+                <select name="cuisine" class="form-select" required>
+                  <option value="">Select Cuisine</option>
+                  <option value="Sri Lankan">Sri Lankan</option>
+                  <option value="Italian">Italian</option>
+                  <option value="American">American</option>
+                  <option value="Japanese">Japanese</option>
+                  <option value="Chinese">Chinese</option>
+                  <option value="Indian">Indian</option>
+                  <option value="Thai">Thai</option>
+                  <option value="Mediterranean">Mediterranean</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Type *</label>
+                <select name="type" class="form-select" required>
+                  <option value="VEG">Vegetarian</option>
+                  <option value="NONVEG">Non-Vegetarian</option>
+                  <option value="BOTH">Both</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rating (0–5)</label>
+                <input type="number" name="rating" class="form-control" value="4.0" min="0" max="5" step="0.1"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Delivery Fee (LKR)</label>
+                <input type="number" name="deliveryFee" class="form-control" value="150" min="0"/>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Opens At</label>
+                <input type="time" name="openTime" class="form-control" value="08:00"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Closes At</label>
+                <input type="time" name="closeTime" class="form-control" value="22:00"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Image URL (Unsplash recommended)</label>
+              <input type="text" name="imageUrl" class="form-control" placeholder="https://images.unsplash.com/..."/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea name="description" class="form-control" rows="3" placeholder="Brief description of the restaurant..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select name="isOpen" class="form-select">
+                <option value="true">Open</option>
+                <option value="false">Closed</option>
+              </select>
+            </div>
+
+            <!-- Discount Section -->
+            <div style="border:2px dashed #f97316; border-radius:var(--radius); padding:1.2rem; margin-bottom:1rem; background:#fff7ed;">
+              <div style="font-weight:700; color:#ea580c; margin-bottom:.8rem;"><i class="fa fa-tag"></i> Online Discount (Optional)</div>
+              <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Discount % (0 = none)</label>
+                  <input type="number" name="discountPercent" class="form-control" value="0" min="0" max="70" placeholder="e.g. 20"/>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Discount Label</label>
+                  <input type="text" name="discountLabel" class="form-control" placeholder="e.g. Weekend Special, Online Exclusive"/>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+              <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> Add Restaurant</button>
+              <a th:href="@{/admin/restaurants}" class="btn btn-outline">Cancel</a>
+            </div>
+          </form>
+
+          <!-- EDIT form -->
+          <form th:if="${restaurant.id != null}" method="post" th:action="@{'/admin/restaurants/edit/' + ${restaurant.id}}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Restaurant Name *</label>
+                <input type="text" name="name" class="form-control" th:value="${restaurant.name}" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone *</label>
+                <input type="text" name="phone" class="form-control" th:value="${restaurant.phone}" required/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address *</label>
+              <input type="text" name="address" class="form-control" th:value="${restaurant.address}" required/>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">City *</label>
+                <select name="city" class="form-select" required>
+                  <option value="Colombo" th:selected="${restaurant.city=='Colombo'}">Colombo</option>
+                  <option value="Kandy"   th:selected="${restaurant.city=='Kandy'}">Kandy</option>
+                  <option value="Galle"   th:selected="${restaurant.city=='Galle'}">Galle</option>
+                  <option value="Jaffna"  th:selected="${restaurant.city=='Jaffna'}">Jaffna</option>
+                  <option value="Negombo" th:selected="${restaurant.city=='Negombo'}">Negombo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cuisine *</label>
+                <select name="cuisine" class="form-select" required>
+                  <option value="Sri Lankan"    th:selected="${restaurant.cuisine=='Sri Lankan'}">Sri Lankan</option>
+                  <option value="Italian"       th:selected="${restaurant.cuisine=='Italian'}">Italian</option>
+                  <option value="American"      th:selected="${restaurant.cuisine=='American'}">American</option>
+                  <option value="Japanese"      th:selected="${restaurant.cuisine=='Japanese'}">Japanese</option>
+                  <option value="Chinese"       th:selected="${restaurant.cuisine=='Chinese'}">Chinese</option>
+                  <option value="Indian"        th:selected="${restaurant.cuisine=='Indian'}">Indian</option>
+                  <option value="Thai"          th:selected="${restaurant.cuisine=='Thai'}">Thai</option>
+                  <option value="Mediterranean" th:selected="${restaurant.cuisine=='Mediterranean'}">Mediterranean</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Type *</label>
+                <select name="type" class="form-select" required>
+                  <option value="VEG"    th:selected="${restaurant.type=='VEG'}">Vegetarian</option>
+                  <option value="NONVEG" th:selected="${restaurant.type=='NONVEG'}">Non-Vegetarian</option>
+                  <option value="BOTH"   th:selected="${restaurant.type=='BOTH'}">Both</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rating (0–5)</label>
+                <input type="number" name="rating" class="form-control" th:value="${restaurant.rating}" min="0" max="5" step="0.1"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Delivery Fee (LKR)</label>
+                <input type="number" name="deliveryFee" class="form-control" th:value="${restaurant.deliveryFee}" min="0"/>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Opens At</label>
+                <input type="time" name="openTime" class="form-control" th:value="${restaurant.openTime}"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Closes At</label>
+                <input type="time" name="closeTime" class="form-control" th:value="${restaurant.closeTime}"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Image URL</label>
+              <input type="text" name="imageUrl" class="form-control" th:value="${restaurant.imageUrl}"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea name="description" class="form-control" rows="3" th:text="${restaurant.description}"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select name="isOpen" class="form-select">
+                <option value="true"  th:selected="${restaurant.open}">Open</option>
+                <option value="false" th:selected="${!restaurant.open}">Closed</option>
+              </select>
+            </div>
+
+            <!-- Discount Section -->
+            <div style="border:2px dashed #f97316; border-radius:var(--radius); padding:1.2rem; margin-bottom:1rem; background:#fff7ed;">
+              <div style="font-weight:700; color:#ea580c; margin-bottom:.8rem;"><i class="fa fa-tag"></i> Online Discount (Optional)</div>
+              <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Discount % (0 = none)</label>
+                  <input type="number" name="discountPercent" class="form-control" th:value="${restaurant.discountPercent}" min="0" max="70"/>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Discount Label</label>
+                  <input type="text" name="discountLabel" class="form-control" th:value="${restaurant.discountLabel}" placeholder="e.g. Weekend Special"/>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+              <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-save"></i> Update Restaurant</button>
+              <a th:href="@{/admin/restaurants}" class="btn btn-outline">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
