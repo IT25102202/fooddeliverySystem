@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Restaurants - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/restaurants}" class="active">Restaurants</a></li>
+        <li th:if="${user != null}"><a th:href="@{/order/history}">My Orders</a></li>
+        <li th:if="${user != null}"><a th:href="@{/review/my}">My Reviews</a></li>
+        <li th:if="${user != null and user.role == 'ADMIN'}"><a th:href="@{/admin/dashboard}">Admin</a></li>
+        <li th:if="${user == null}"><a th:href="@{/login}">Login</a></li>
+        <li th:if="${user == null}"><a th:href="@{/register}" class="btn-nav-primary">Sign Up</a></li>
+        <li th:if="${user != null}"><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+        <li th:if="${user != null}"><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+
+<div class="page-header">
+    <h1><i class="fa fa-store"></i> All Restaurants</h1>
+    <p>Discover amazing food from the best restaurants near you</p>
+</div>
+
+<section class="section">
+    <!-- SEARCH & FILTER BAR -->
+    <div style="background:white; border-radius:var(--radius-lg); padding:1.5rem; box-shadow:var(--shadow); margin-bottom:2rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+        <form th:action="@{/restaurants}" method="get" style="display:flex; gap:1rem; flex-wrap:wrap; flex:1; align-items:flex-end;">
+            <div style="flex:1; min-width:200px;">
+                <label class="form-label">Search</label>
+                <div style="position:relative;">
+                    <i class="fa fa-search" style="position:absolute; left:.9rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                    <input type="text" name="search" class="form-control" style="padding-left:2.5rem;" placeholder="Restaurant or cuisine..." th:value="${search}"/>
+                </div>
+            </div>
+            <div style="min-width:150px;">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="VEG"    th:selected="${type == 'VEG'}">🌱 Vegetarian</option>
+                    <option value="NONVEG" th:selected="${type == 'NONVEG'}">🍖 Non-Veg</option>
+                    <option value="BOTH"   th:selected="${type == 'BOTH'}">🍽️ Both</option>
+                </select>
+            </div>
+            <div style="min-width:150px;">
+                <label class="form-label">City</label>
+                <select name="city" class="form-select">
+                    <option value="">All Cities</option>
+                    <option value="Colombo" th:selected="${city == 'Colombo'}">Colombo</option>
+                    <option value="Kandy"   th:selected="${city == 'Kandy'}">Kandy</option>
+                    <option value="Galle"   th:selected="${city == 'Galle'}">Galle</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> Filter</button>
+            <a th:href="@{/restaurants}" class="btn btn-outline">Clear</a>
+        </form>
+    </div>
+
+    <!-- RESULTS COUNT -->
+    <p style="color:var(--text-muted); margin-bottom:1.5rem; font-size:.9rem;">
+        Showing <strong th:text="${#lists.size(restaurants)}">0</strong> restaurant(s)
+        <span th:if="${search != null and !search.isEmpty()}"> for "<strong th:text="${search}"></strong>"</span>
+    </p>
+
+    <!-- RESTAURANT GRID -->
+    <div class="grid-3" th:if="${!#lists.isEmpty(restaurants)}">
+        <th:block th:each="r : ${restaurants}">
+            <a th:href="@{'/restaurants/' + ${r.id}}" class="restaurant-card fade-in">
+                <div style="position:relative;">
+                    <img th:src="${r.imageUrl}" th:alt="${r.name}" class="card-img"
+                         onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600'"/>
+                    <span th:unless="${r.open}"
+                          style="position:absolute;top:.7rem;right:.7rem;background:rgba(0,0,0,.7);color:white;padding:.2rem .7rem;border-radius:50px;font-size:.75rem;font-weight:600;">Closed</span>
+                    <span th:if="${r.open}"
+                          style="position:absolute;top:.7rem;right:.7rem;background:var(--success);color:white;padding:.2rem .7rem;border-radius:50px;font-size:.75rem;font-weight:600;">Open</span>
+                    <!-- Discount badge -->
+                    <div th:if="${r.hasDiscount()}"
+                         style="position:absolute;top:.7rem;left:.7rem;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:.28rem .75rem;border-radius:50px;font-size:.75rem;font-weight:700;box-shadow:0 2px 8px rgba(220,38,38,.4);display:flex;align-items:center;gap:.3rem;">
+                        <span>🏷️</span>
+                        <span th:text="${r.discountPercent + '% OFF'}">10% OFF</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="restaurant-meta">
+            <span class="badge"
+                  th:classappend="${r.type == 'VEG'} ? 'badge-veg' : (${r.type == 'NONVEG'} ? 'badge-nonveg' : 'badge-both')"
+                  th:text="${r.type == 'VEG'} ? '🌱 Veg' : (${r.type == 'NONVEG'} ? '🍖 Non-Veg' : '🍽️ Both')">
+            </span>
+                        <span class="rating"><i class="fa fa-star"></i> [[${r.rating}]]</span>
+                    </div>
+                    <h3 class="card-title" th:text="${r.name}">Name</h3>
+                    <p class="card-text" th:text="${r.cuisine + ' · ' + r.city}">Cuisine</p>
+                    <p class="card-text" style="margin-top:.3rem; font-size:.8rem;" th:text="${r.description}"></p>
+                    <div th:if="${r.hasDiscount()}"
+                         style="background:#fef2f2;border-radius:6px;padding:.3rem .6rem;margin-top:.5rem;font-size:.75rem;color:#dc2626;font-weight:600;display:flex;align-items:center;gap:.3rem;">
+                        <i class="fa fa-tag"></i>
+                        <span th:text="${r.discountLabel + ' · ' + r.discountPercent + '% off your order'}">Online Deal</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.9rem; padding-top:.7rem; border-top:1px solid var(--border);">
+            <span style="font-size:.8rem; color:var(--text-muted);">
+              <i class="fa fa-clock"></i> [[${r.openTime}]] - [[${r.closeTime}]]
+            </span>
+                        <span style="font-size:.82rem; color:var(--primary); font-weight:600;">
+              <i class="fa fa-motorcycle"></i> LKR [[${r.deliveryFee}]]
+            </span>
+                    </div>
+                </div>
+            </a>
+        </th:block>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div th:if="${#lists.isEmpty(restaurants)}" style="text-align:center; padding:4rem 2rem;">
+        <div style="font-size:4rem; margin-bottom:1rem;">🍽️</div>
+        <h3 style="font-family:'Playfair Display',serif; margin-bottom:.5rem;">No Restaurants Found</h3>
+        <p style="color:var(--text-muted); margin-bottom:1.5rem;">Try adjusting your search filters</p>
+        <a th:href="@{/restaurants}" class="btn btn-primary">View All Restaurants</a>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-bottom">&copy; 2025 FoodHub · SE1020 OOP Project</div>
+</footer>
+</body>
+</html>
