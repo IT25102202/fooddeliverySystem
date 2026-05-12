@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${restaurant.name} + ' - FoodHub'">Restaurant - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        .menu-layout { display:grid; grid-template-columns:1fr 340px; gap:2rem; align-items:start; }
+        .menu-section { margin-bottom:2rem; }
+        .menu-section-title { font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:1rem; padding-bottom:.5rem; border-bottom:2px solid var(--primary); display:inline-block; }
+
+        /* Clickable menu card */
+        .menu-item { display:flex; background:white; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:1rem; overflow:hidden; transition:.2s; cursor:pointer; position:relative; }
+        .menu-item:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+        .menu-item:hover .item-hover-hint { opacity:1; }
+        .item-hover-hint { position:absolute; top:.5rem; right:.5rem; background:var(--primary); color:white; font-size:.7rem; padding:.2rem .55rem; border-radius:20px; opacity:0; transition:.2s; }
+        .menu-item img { width:120px; height:110px; object-fit:cover; flex-shrink:0; }
+        .menu-item-info { flex:1; padding:.9rem 1rem; display:flex; flex-direction:column; justify-content:space-between; }
+        .menu-item-info h4 { font-weight:700; margin-bottom:.2rem; font-size:.95rem; }
+        .menu-item-info p { color:var(--text-muted); font-size:.78rem; margin-bottom:.4rem; line-height:1.4; }
+        .menu-item-footer { display:flex; align-items:center; justify-content:space-between; margin-top:.4rem; }
+        .add-hint { font-size:.75rem; color:var(--primary); font-weight:600; }
+
+        /* Modal */
+        .modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.55); backdrop-filter:blur(3px); justify-content:center; align-items:center; padding:1rem; }
+        .modal-overlay.active { display:flex; }
+        .modal-box { background:white; border-radius:var(--radius-lg); width:100%; max-width:560px; max-height:92vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,.3); animation:slideUp .25s ease; position:relative; }
+        @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .modal-img { width:100%; height:220px; object-fit:cover; border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
+        .modal-body { padding:1.5rem; }
+        .modal-title { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; margin-bottom:.3rem; }
+        .modal-desc { color:var(--text-muted); font-size:.9rem; line-height:1.6; margin-bottom:1.2rem; }
+        .modal-close { position:absolute; top:.8rem; right:.8rem; background:rgba(0,0,0,.5); border:none; color:white; width:34px; height:34px; border-radius:50%; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
+
+        /* Option pills */
+        .option-group { margin-bottom:1.2rem; }
+        .option-label { font-weight:700; font-size:.82rem; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dark); margin-bottom:.6rem; display:flex; align-items:center; gap:.4rem; }
+        .option-pills { display:flex; gap:.6rem; flex-wrap:wrap; }
+        .option-pill { border:2px solid var(--border); border-radius:30px; padding:.38rem .9rem; font-size:.85rem; cursor:pointer; transition:.15s; background:white; display:flex; flex-direction:column; align-items:center; min-width:70px; }
+        .option-pill:hover { border-color:var(--primary); color:var(--primary); }
+        .option-pill.selected { border-color:var(--primary); background:var(--primary); color:white; }
+        .option-pill .pill-price { font-size:.72rem; margin-top:.1rem; opacity:.85; }
+
+        /* Tags */
+        .tag-row { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+        .tag { font-size:.72rem; padding:.22rem .65rem; border-radius:20px; font-weight:600; }
+        .tag-veg    { background:#dcfce7; color:#16a34a; }
+        .tag-nonveg { background:#fee2e2; color:#dc2626; }
+        .tag-spicy  { background:#fff7ed; color:#ea580c; }
+        .tag-cold   { background:#eff6ff; color:#2563eb; }
+        .tag-hot    { background:#fff1f2; color:#e11d48; }
+
+        /* Modal footer */
+        .modal-footer { display:flex; align-items:center; justify-content:space-between; margin-top:1.5rem; gap:1rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:1rem; }
+        .qty-row { display:flex; align-items:center; gap:.6rem; }
+        .qty-circle { width:34px; height:34px; border-radius:50%; border:2px solid var(--primary); background:white; color:var(--primary); font-size:1.1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s; }
+        .qty-circle:hover { background:var(--primary); color:white; }
+        .qty-val { font-size:1.1rem; font-weight:700; min-width:28px; text-align:center; }
+        .modal-price-big { font-size:1.5rem; font-weight:800; color:var(--primary); }
+
+        /* Cart */
+        .cart-item-row { display:flex; justify-content:space-between; padding:.4rem 0; font-size:.88rem; border-bottom:1px solid var(--border); align-items:center; }
+        .cart-item-sub { font-size:.72rem; color:var(--text-muted); }
+
+        @media(max-width:900px) { .menu-layout { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/restaurants}" class="active">Restaurants</a></li>
+        <li th:if="${user != null}"><a th:href="@{/order/history}">My Orders</a></li>
+        <li th:if="${user != null}"><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+        <li th:if="${user == null}"><a th:href="@{/login}">Login</a></li>
+        <li th:if="${user == null}"><a th:href="@{/register}" class="btn-nav-primary">Sign Up</a></li>
+        <li th:if="${user != null}"><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+
+<!-- RESTAURANT HERO -->
+<div style="position:relative; height:320px; overflow:hidden;">
+    <img th:src="${restaurant.imageUrl}" th:alt="${restaurant.name}"
+         style="width:100%; height:100%; object-fit:cover;"
+         onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200'"/>
+    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8) 0%,rgba(0,0,0,.2) 60%);"></div>
+    <div style="position:absolute;bottom:2rem;left:2rem;color:white;">
+        <div style="display:flex; gap:.6rem; margin-bottom:.6rem; flex-wrap:wrap;">
+      <span class="badge" style="background:rgba(255,255,255,.2);color:white;"
+            th:text="${restaurant.type == 'VEG'} ? '🌱 Pure Veg' : (${restaurant.type == 'NONVEG'} ? '🍖 Non-Veg' : '🍽️ Veg &amp; Non-Veg')"></span>
+            <span th:if="${restaurant.open}" class="badge badge-success">● Open Now</span>
+            <span th:unless="${restaurant.open}" class="badge badge-danger">● Closed</span>
+        </div>
+        <h1 style="font-family:'Playfair Display',serif; font-size:2.4rem; margin-bottom:.3rem;" th:text="${restaurant.name}">Name</h1>
+        <p style="opacity:.85; font-size:.95rem;">
+            <i class="fa fa-map-marker-alt"></i> [[${restaurant.address}]], [[${restaurant.city}]] &nbsp;|&nbsp;
+            <i class="fa fa-star" style="color:#f59e0b"></i> [[${restaurant.rating}]] rating &nbsp;|&nbsp;
+            <i class="fa fa-clock"></i> [[${restaurant.openTime}]] - [[${restaurant.closeTime}]]
+        </p>
+    </div>
+</div>
+
+<div class="section">
+    <!-- INFO BAR -->
+    <div style="background:white; border-radius:var(--radius); padding:1.2rem 1.5rem; box-shadow:var(--shadow); margin-bottom:2rem; display:flex; gap:2rem; flex-wrap:wrap; align-items:center;">
+        <div><span style="color:var(--text-muted); font-size:.8rem;">CUISINE</span><br/><strong th:text="${restaurant.cuisine}">Cuisine</strong></div>
+        <div><span style="color:var(--text-muted); font-size:.8rem;">DELIVERY FEE</span><br/><strong>LKR <span th:text="${restaurant.deliveryFee}">150</span></strong></div>
+        <div><span style="color:var(--text-muted); font-size:.8rem;">DELIVERY TIME</span><br/><strong>30–45 min</strong></div>
+        <div><span style="color:var(--text-muted); font-size:.8rem;">PHONE</span><br/><strong th:text="${restaurant.phone}">Phone</strong></div>
+        <div style="margin-left:auto;">
+            <div class="rating" style="font-size:1.2rem;"><i class="fa fa-star"></i> <span th:text="${restaurant.rating}">4.5</span> / 5.0</div>
+            <div style="font-size:.78rem; color:var(--text-muted);">([[${#lists.size(reviews)}]] reviews)</div>
+        </div>
+    </div>
+
+    <!-- DISCOUNT BANNER -->
+    <div th:if="${restaurant.hasDiscount()}"
+         style="background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;border-radius:var(--radius-lg);padding:1.1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.2rem;box-shadow:0 4px 20px rgba(220,38,38,.3);flex-wrap:wrap;">
+        <div style="font-size:2.5rem;">🏷️</div>
+        <div style="flex:1;">
+            <div style="font-size:1.2rem;font-weight:800;letter-spacing:.3px;" th:text="${restaurant.discountPercent + '% OFF — ' + restaurant.discountLabel}">20% OFF</div>
+            <div style="font-size:.88rem;opacity:.9;margin-top:.2rem;">Save on your subtotal when ordering online through FoodHub!</div>
+        </div>
+        <div style="background:rgba(255,255,255,.2);border-radius:var(--radius);padding:.5rem 1.1rem;text-align:center;white-space:nowrap;">
+            <div style="font-size:.72rem;opacity:.8;text-transform:uppercase;letter-spacing:.5px;">Online Deal</div>
+            <div style="font-size:1.5rem;font-weight:900;" th:text="${restaurant.discountPercent + '%'}">20%</div>
+            <div style="font-size:.72rem;opacity:.8;">savings</div>
+        </div>
+    </div>
+
+    <div class="menu-layout">
+        <!-- MENU ITEMS -->
+        <div id="menuSection">
+
+            <!-- Main Courses -->
+            <div class="menu-section" th:if="${!#lists.isEmpty(mainCourses)}">
+                <h2 class="menu-section-title">🍽️ Main Course</h2>
+                <div th:each="item : ${mainCourses}">
+                    <div class="menu-item" th:if="${item.available}"
+                         th:attr="onclick='openModal(
+                 &quot;' + ${item.id} + '&quot;,
+                 &quot;' + ${#strings.escapeXml(item.name)} + '&quot;,
+                 &quot;' + ${#strings.escapeXml(item.description != null ? item.description : (item.veg ? &quot;Vegetarian main course&quot; : &quot;Non-vegetarian main course&quot;))} + '&quot;,
+                 ' + ${item.price} + ',
+                 &quot;' + ${item.imageUrl != null ? item.imageUrl : ''} + '&quot;,
+                 &quot;MAINCOURSE&quot;,
+                 ' + ${item.veg} + ',
+                 ' + ${item.spicy} + ',
+                 ' + ${item.prepTime} + '
+               )'">
+                        <img th:src="${item.imageUrl}" th:alt="${item.name}"
+                             onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'"/>
+                        <div class="item-hover-hint"><i class="fa fa-eye"></i> View &amp; Add</div>
+                        <div class="menu-item-info">
+                            <div>
+                                <div style="display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; margin-bottom:.3rem;">
+                                    <h4 th:text="${item.name}">Item</h4>
+                                    <span th:if="${item.veg}" class="badge badge-veg" style="font-size:.68rem;">🌱 Veg</span>
+                                    <span th:unless="${item.veg}" class="badge badge-nonveg" style="font-size:.68rem;">🍖 Non-Veg</span>
+                                    <span th:if="${item.spicy}" style="font-size:.8rem;">🌶️</span>
+                                </div>
+                                <p th:text="${item.description}">Description</p>
+                                <div style="font-size:.72rem; color:var(--text-muted);">
+                                    <i class="fa fa-expand-arrows-alt"></i> Half / Full &nbsp;·&nbsp;
+                                    <i class="fa fa-clock"></i> [[${item.prepTime}]] min
+                                </div>
+                            </div>
+                            <div class="menu-item-footer">
+                                <span style="font-size:1.05rem; font-weight:700; color:var(--primary);">from LKR [[${#numbers.formatDecimal(item.price * 0.6, 1, 0)}]]</span>
+                                <span class="add-hint"><i class="fa fa-plus-circle"></i> Customize &amp; Add</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desserts -->
+            <div class="menu-section" th:if="${!#lists.isEmpty(desserts)}">
+                <h2 class="menu-section-title">🍰 Desserts</h2>
+                <div th:each="item : ${desserts}">
+                    <div class="menu-item" th:if="${item.available}"
+                         th:attr="onclick='openModal(
+                 &quot;' + ${item.id} + '&quot;,
+                 &quot;' + ${#strings.escapeXml(item.name)} + '&quot;,
+                 &quot;' + ${#strings.escapeXml(item.description != null ? item.description : &quot;A delicious dessert&quot;)} + '&quot;,
+                 ' + ${item.price} + ',
+                 &quot;' + ${item.imageUrl != null ? item.imageUrl : ''} + '&quot;,
+                 &quot;DESSERT&quot;,
+                 true, false,
+                 ' + ${item.prepTime} + '
+               )'">
+                        <img th:src="${item.imageUrl}" th:alt="${item.name}"
+                             onerror="this.src='https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400'"/>
+                        <div class="item-hover-hint"><i class="fa fa-eye"></i> View &amp; Add</div>
+                        <div class="menu-item-info">
+                            <div>
+                                <h4 th:text="${item.name}">Dessert</h4>
+                                <p th:text="${item.description}">Description</p>
+                                <div style="font-size:.72rem; color:var(--text-muted);">
+                                    <span th:if="${item.glutenFree}">🌾 Gluten-Free &nbsp;·&nbsp;</span>
+                                    <span th:if="${item.containsNuts}">🥜 Contains Nuts &nbsp;·&nbsp;</span>
+                                    <i class="fa fa-clock"></i> [[${item.prepTime}]] min
+                                </div>
+                            </div>
+                            <div class="menu-item-footer">
+                                <span style="font-size:1.05rem; font-weight:700; color:var(--primary);">LKR [[${item.price}]]</span>
+                                <span class="add-hint"><i class="fa fa-plus-circle"></i> View &amp; Add</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beverages -->
+            <div class="menu-section" th:if="${!#lists.isEmpty(beverages)}">
+                <h2 class="menu-section-title">🥤 Beverages</h2>
+                <div th:each="item : ${beverages}">
+                    <div class="menu-item" th:if="${item.available}"
+                         th:attr="onclick='openModal(
+                 &quot;' + ${item.id} + '&quot;,
+                 &quot;' + ${#strings.escapeXml(item.name)} + '&quot;,
+                 &quot;' + ${#strings.escapeXml(item.description != null ? item.description : (item.cold ? &quot;Refreshing cold drink&quot; : &quot;Warm comforting drink&quot;))} + '&quot;,
+                 ' + ${item.price} + ',
+                 &quot;' + ${item.imageUrl != null ? item.imageUrl : ''} + '&quot;,
+                 &quot;BEVERAGE&quot;,
+                 true, ' + ${item.cold} + ',
+                 ' + ${item.prepTime} + '
+               )'">
+                        <img th:src="${item.imageUrl}" th:alt="${item.name}"
+                             onerror="this.src='https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=400'"/>
+                        <div class="item-hover-hint"><i class="fa fa-eye"></i> View &amp; Add</div>
+                        <div class="menu-item-info">
+                            <div>
+                                <h4 th:text="${item.name}">Beverage</h4>
+                                <p th:text="${item.description}">Description</p>
+                                <div style="font-size:.72rem; color:var(--text-muted);">
+                                    <span th:if="${item.cold}">🧊 Cold</span>
+                                    <span th:unless="${item.cold}">☕ Hot</span>
+                                    &nbsp;·&nbsp; Small / Medium / Large
+                                </div>
+                            </div>
+                            <div class="menu-item-footer">
+                                <span style="font-size:1.05rem; font-weight:700; color:var(--primary);">from LKR [[${#numbers.formatDecimal(item.price * 0.75, 1, 0)}]]</span>
+                                <span class="add-hint"><i class="fa fa-plus-circle"></i> Choose Size</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CART SIDEBAR -->
+        <div class="cart-sidebar">
+            <h3 style="font-family:'Playfair Display',serif; margin-bottom:1rem;"><i class="fa fa-shopping-cart" style="color:var(--primary)"></i> Your Order</h3>
+            <div id="cartItems">
+                <p style="color:var(--text-muted); font-size:.88rem; text-align:center; padding:1rem 0;">Tap any item to customize &amp; add</p>
+            </div>
+            <div id="cartSummary" style="display:none;">
+                <hr style="margin:1rem 0; border-color:var(--border);"/>
+                <div style="display:flex; justify-content:space-between; font-size:.88rem; margin-bottom:.4rem;">
+                    <span style="color:var(--text-muted);">Subtotal</span>
+                    <span id="subtotalDisplay">LKR 0</span>
+                </div>
+                <div id="discountRow" style="display:none; justify-content:space-between; font-size:.88rem; margin-bottom:.4rem; color:#dc2626; font-weight:600;">
+                    <span>🏷️ <span id="discountLabelCart">Discount</span></span>
+                    <span>− LKR <span id="discountAmtDisplay">0</span></span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:.88rem; margin-bottom:.4rem;">
+                    <span style="color:var(--text-muted);">Delivery Fee</span>
+                    <span>LKR <span th:text="${restaurant.deliveryFee}">150</span></span>
+                </div>
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span id="totalDisplay" style="color:var(--primary);">LKR 0</span>
+                </div>
+                <div style="margin-top:1rem;">
+                    <label class="form-label">Delivery Address</label>
+                    <input type="text" id="deliveryAddr" class="form-control" placeholder="Enter your delivery address" required/>
+                </div>
+                <div style="margin-top:.8rem;">
+                    <label class="form-label">Special Instructions (optional)</label>
+                    <textarea id="specialInstr" class="form-control" rows="2" placeholder="e.g. No onions, extra sauce..."></textarea>
+                </div>
+                <div style="margin-top:1rem;">
+                    <button type="button" class="btn btn-primary btn-block btn-lg" onclick="proceedOrder()" th:if="${user != null}">
+                        <i class="fa fa-check-circle"></i> Place Order
+                    </button>
+                    <a th:if="${user == null}" th:href="@{/login}" class="btn btn-primary btn-block btn-lg">
+                        <i class="fa fa-sign-in-alt"></i> Login to Order
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REVIEWS -->
+    <div style="margin-top:3rem;">
+        <h2 style="font-family:'Playfair Display',serif; font-size:1.6rem; margin-bottom:.4rem;">Customer Reviews</h2>
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <div style="font-size:3rem; font-weight:900; color:var(--primary);" th:text="${#numbers.formatDecimal(avgRating,1,1)}">4.5</div>
+            <div>
+                <div class="stars" style="font-size:1.3rem;" th:text="${#strings.repeat('★', avgRating.intValue()) + #strings.repeat('☆', 5 - avgRating.intValue())}">★★★★☆</div>
+                <div style="color:var(--text-muted); font-size:.85rem;">[[${#lists.size(reviews)}]] reviews</div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(reviews)}" style="color:var(--text-muted); font-style:italic;">No reviews yet. Be the first to review!</div>
+        <div th:each="rv : ${reviews}" style="background:white; border-radius:var(--radius); padding:1.2rem 1.4rem; margin-bottom:1rem; box-shadow:var(--shadow);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem; flex-wrap:wrap; gap:.5rem;">
+                <div style="display:flex; align-items:center; gap:.8rem;">
+                    <div style="width:38px;height:38px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;"
+                         th:text="${#strings.substring(rv.customerName,0,1)}">K</div>
+                    <div>
+                        <strong th:text="${rv.customerName}">Customer</strong>
+                        <div style="font-size:.75rem; color:var(--text-muted);" th:text="${rv.reviewDateTime}">Date</div>
+                    </div>
+                </div>
+                <div class="stars" th:text="${rv.starDisplay}">★★★★★</div>
+            </div>
+            <p style="color:var(--text-muted); font-size:.9rem; font-style:italic;">"[[${rv.comment}]]"</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ITEM DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="itemModal" onclick="closeModalOutside(event)">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal()"><i class="fa fa-times"></i></button>
+        <img id="mImg" class="modal-img" src="" alt=""
+             onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600'"/>
+        <div class="modal-body">
+            <h2 class="modal-title" id="mName">Item Name</h2>
+            <div class="tag-row" id="mTags"></div>
+            <p class="modal-desc" id="mDesc">Description.</p>
+
+            <!-- Portion / Size options -->
+            <div class="option-group" id="portionGroup" style="display:none;">
+                <div class="option-label" id="portionLabel"><i class="fa fa-expand-arrows-alt" style="color:var(--primary)"></i> Choose Portion</div>
+                <div class="option-pills" id="portionPills"></div>
+            </div>
+
+            <!-- Spice level -->
+            <div class="option-group" id="spicyGroup" style="display:none;">
+                <div class="option-label"><i class="fa fa-fire" style="color:#ea580c"></i> Spice Level</div>
+                <div class="option-pills">
+                    <div class="option-pill selected" id="spiceMild" onclick="selectSpice(this,'Mild')">😊 Mild</div>
+                    <div class="option-pill" id="spiceMed"  onclick="selectSpice(this,'Medium')">🌶️ Medium</div>
+                    <div class="option-pill" id="spiceHot"  onclick="selectSpice(this,'Hot')">🔥 Extra Hot</div>
+                </div>
+            </div>
+
+            <div style="font-size:.8rem; color:var(--text-muted); margin-bottom:1rem;">
+                <i class="fa fa-clock"></i> Ready in <span id="mPrepVal">15</span> min
+            </div>
+
+            <div class="modal-footer">
+                <div class="qty-row">
+                    <button class="qty-circle" onclick="modalQtyChange(-1)">−</button>
+                    <span class="qty-val" id="mQtyVal">1</span>
+                    <button class="qty-circle" onclick="modalQtyChange(1)">+</button>
+                </div>
+                <span class="modal-price-big" id="mPriceDisplay">LKR 0</span>
+                <button class="btn btn-primary" style="flex:1; min-width:130px;" onclick="addToCartFromModal()">
+                    <i class="fa fa-cart-plus"></i> Add to Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- HIDDEN ORDER FORM -->
+<form id="hiddenOrderForm" method="post" th:action="@{/order/place}" style="display:none;">
+    <input type="hidden" name="restaurantId"     th:value="${restaurant.id}"/>
+    <input type="hidden" name="restaurantName"   th:value="${restaurant.name}"/>
+    <input type="hidden" name="deliveryAddress"  id="hiddenAddr"/>
+    <input type="hidden" name="specialInstructions" id="hiddenInstr"/>
+    <div id="hiddenQtyFields"></div>
+</form>
+
+<footer class="footer">
+    <div class="footer-bottom">&copy; 2025 FoodHub · SE1020 OOP Project</div>
+</footer>
+
+<script>
+    const DELIVERY_FEE    = /*[[${restaurant.deliveryFee}]]*/ 150;
+    const DISCOUNT_PCT    = /*[[${restaurant.discountPercent}]]*/ 0;
+    const DISCOUNT_LABEL  = /*[[${restaurant.discountLabel}]]*/ '';
+
+    // Cart: cartKey → { name, price, qty, itemId }
+    let cartData = {};
+
+    // Modal state
+    let mItemId, mBasePrice, mQty = 1;
+    let mSelectedPortion = null;
+    let mSpiceLevel = 'Mild';
+
+    // ── Open Modal ──────────────────────────────────
+    function openModal(id, name, desc, price, img, category, isVeg, isSpicyOrCold, prepTime) {
+      mItemId    = id;
+      mBasePrice = price;
+      mQty       = 1;
+      mSelectedPortion = null;
+
+      document.getElementById('mName').textContent    = name;
+      document.getElementById('mDesc').textContent    = desc || 'No description available.';
+      document.getElementById('mPrepVal').textContent = prepTime;
+      const imgEl = document.getElementById('mImg');
+      imgEl.src = img || ''; imgEl.alt = name;
+      document.getElementById('mQtyVal').textContent = '1';
+
+      // Tags
+      const tagsEl = document.getElementById('mTags');
+      tagsEl.innerHTML = '';
+      if (category === 'MAINCOURSE') {
+        tagsEl.innerHTML += isVeg
+          ? '<span class="tag tag-veg">🌱 Vegetarian</span>'
+          : '<span class="tag tag-nonveg">🍖 Non-Vegetarian</span>';
+        if (isSpicyOrCold) tagsEl.innerHTML += '<span class="tag tag-spicy">🌶️ Spicy</span>';
+      } else if (category === 'BEVERAGE') {
+        tagsEl.innerHTML += isSpicyOrCold
+          ? '<span class="tag tag-cold">🧊 Cold</span>'
+          : '<span class="tag tag-hot">☕ Hot</span>';
+        tagsEl.innerHTML += '<span class="tag tag-veg">🌱 Veg</span>';
+      } else {
+        tagsEl.innerHTML += '<span class="tag tag-veg">🌱 Veg</span>';
+      }
+
+      // ── Portion / Size Pills ──
+      const portionGroup = document.getElementById('portionGroup');
+      const portionLabel = document.getElementById('portionLabel');
+      const portionPills = document.getElementById('portionPills');
+      portionPills.innerHTML = '';
+
+      if (category === 'MAINCOURSE') {
+        portionLabel.innerHTML = '<i class="fa fa-expand-arrows-alt" style="color:var(--primary)"></i> Choose Portion';
+        const portions = [
+          { label:'Half',  mult:0.6 },
+          { label:'Full',  mult:1.0 },
+        ];
+        portions.forEach((p, i) => {
+          const el = makePill(p.label, Math.round(price * p.mult), i === 1);
+          el.onclick = () => selectPortion(el, p.label, Math.round(price * p.mult));
+          portionPills.appendChild(el);
+          if (i === 1) mSelectedPortion = { label: p.label, price: Math.round(price * p.mult) };
+        });
+        portionGroup.style.display = 'block';
+
+      } else if (category === 'BEVERAGE') {
+        portionLabel.innerHTML = '<i class="fa fa-glass-water" style="color:var(--primary)"></i> Choose Size';
+        const sizes = [
+          { label:'Small',  mult:0.75 },
+          { label:'Medium', mult:1.0  },
+          { label:'Large',  mult:1.35 },
+        ];
+        sizes.forEach((s, i) => {
+          const el = makePill(s.label, Math.round(price * s.mult), i === 1);
+          el.onclick = () => selectPortion(el, s.label, Math.round(price * s.mult));
+          portionPills.appendChild(el);
+          if (i === 1) mSelectedPortion = { label: s.label, price: Math.round(price * s.mult) };
+        });
+        portionGroup.style.display = 'block';
+
+      } else {
+        portionGroup.style.display = 'none';
+        mSelectedPortion = { label: '', price: price };
+      }
+
+      // ── Spice Level ──
+      const spicyGroup = document.getElementById('spicyGroup');
+      spicyGroup.style.display = (category === 'MAINCOURSE' && isSpicyOrCold) ? 'block' : 'none';
+      mSpiceLevel = 'Mild';
+      ['spiceMild','spiceMed','spiceHot'].forEach(x => document.getElementById(x).classList.remove('selected'));
+      document.getElementById('spiceMild').classList.add('selected');
+
+      updateModalPrice();
+      document.getElementById('itemModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function makePill(label, price, selected) {
+      const el = document.createElement('div');
+      el.className = 'option-pill' + (selected ? ' selected' : '');
+      el.innerHTML = label + '<span class="pill-price">LKR ' + price + '</span>';
+      return el;
+    }
+
+    function closeModal() {
+      document.getElementById('itemModal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    function closeModalOutside(e) { if (e.target.id === 'itemModal') closeModal(); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    function selectPortion(el, label, price) {
+      el.parentElement.querySelectorAll('.option-pill').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      mSelectedPortion = { label, price };
+      updateModalPrice();
+    }
+
+    function selectSpice(el, level) {
+      mSpiceLevel = level;
+      el.parentElement.querySelectorAll('.option-pill').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function modalQtyChange(delta) {
+      mQty = Math.max(1, Math.min(10, mQty + delta));
+      document.getElementById('mQtyVal').textContent = mQty;
+      updateModalPrice();
+    }
+
+    function updateModalPrice() {
+      const unit = mSelectedPortion ? mSelectedPortion.price : mBasePrice;
+      document.getElementById('mPriceDisplay').textContent = 'LKR ' + (unit * mQty);
+    }
+
+    // ── Add to cart ──────────────────────────────────
+    function addToCartFromModal() {
+      const unit  = mSelectedPortion ? mSelectedPortion.price : mBasePrice;
+      const portionLabel = mSelectedPortion && mSelectedPortion.label ? ' (' + mSelectedPortion.label + ')' : '';
+      const name  = document.getElementById('mName').textContent + portionLabel;
+      const key   = mItemId + (mSelectedPortion ? '_' + mSelectedPortion.label : '');
+
+      if (cartData[key]) cartData[key].qty += mQty;
+      else cartData[key] = { name, price: unit, qty: mQty, itemId: mItemId };
+
+      closeModal();
+      renderCart();
+
+      // Flash sidebar border
+      const sb = document.querySelector('.cart-sidebar');
+      sb.style.transition = 'box-shadow .3s';
+      sb.style.boxShadow  = '0 0 0 3px var(--primary)';
+      setTimeout(() => sb.style.boxShadow = '', 700);
+    }
+
+    // ── Render cart sidebar ──────────────────────────
+    function renderCart() {
+      const cartEl    = document.getElementById('cartItems');
+      const summaryEl = document.getElementById('cartSummary');
+      const keys = Object.keys(cartData);
+
+      if (!keys.length) {
+        cartEl.innerHTML = '<p style="color:var(--text-muted); font-size:.88rem; text-align:center; padding:1rem 0;">Tap any item to customize &amp; add</p>';
+        summaryEl.style.display = 'none';
+        return;
+      }
+
+      let html = '', subtotal = 0;
+      keys.forEach(key => {
+        const it = cartData[key];
+        subtotal += it.price * it.qty;
+        html += `<div class="cart-item-row">
+          <div>
+            <div style="font-size:.87rem;">${it.name}</div>
+            <div class="cart-item-sub">LKR ${it.price} × ${it.qty}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem;">
+            <span style="font-weight:600;font-size:.87rem;">LKR ${it.price * it.qty}</span>
+            <button onclick="removeItem('${key}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:.85rem;">✕</button>
+          </div>
+        </div>`;
+      });
+
+      cartEl.innerHTML = html;
+      summaryEl.style.display = 'block';
+      // Apply discount
+      let discountAmt = 0;
+      const discRow = document.getElementById('discountRow');
+      if (DISCOUNT_PCT > 0 && subtotal > 0) {
+        discountAmt = Math.round(subtotal * DISCOUNT_PCT / 100);
+        document.getElementById('discountAmtDisplay').textContent = discountAmt;
+        document.getElementById('discountLabelCart').textContent  = DISCOUNT_LABEL || (DISCOUNT_PCT + '% Off');
+        discRow.style.display = 'flex';
+      } else {
+        discRow.style.display = 'none';
+      }
+
+      document.getElementById('subtotalDisplay').textContent = 'LKR ' + subtotal;
+      document.getElementById('totalDisplay').textContent    = 'LKR ' + (subtotal - discountAmt + DELIVERY_FEE);
+    }
+
+    function removeItem(key) { delete cartData[key]; renderCart(); }
+
+    // ── Place order ──────────────────────────────────
+    function proceedOrder() {
+      const addr = document.getElementById('deliveryAddr').value.trim();
+      if (!addr) { alert('Please enter your delivery address.'); return; }
+      if (!Object.keys(cartData).length) { alert('Please add at least one item.'); return; }
+
+      document.getElementById('hiddenAddr').value  = addr;
+      document.getElementById('hiddenInstr').value = document.getElementById('specialInstr').value;
+
+      const qtyDiv = document.getElementById('hiddenQtyFields');
+      qtyDiv.innerHTML = '';
+      const grouped = {};
+      Object.values(cartData).forEach(it => { grouped[it.itemId] = (grouped[it.itemId] || 0) + it.qty; });
+      Object.entries(grouped).forEach(([id, qty]) => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'qty_' + id; inp.value = qty;
+        qtyDiv.appendChild(inp);
+      });
+      document.getElementById('hiddenOrderForm').submit();
+    }
+</script>
+</body>
+</html>
