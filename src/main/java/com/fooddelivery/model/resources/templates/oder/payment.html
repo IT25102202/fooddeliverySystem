@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payment - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        .payment-layout { display:grid; grid-template-columns:1fr 360px; gap:2rem; max-width:950px; margin:0 auto; }
+        .method-tab { border:2px solid var(--border); border-radius:12px; padding:1rem 1.4rem; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:.8rem; }
+        .method-tab:hover, .method-tab.selected { border-color:var(--primary); background:#fff5f2; }
+        @media(max-width:768px) { .payment-layout { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/order/history}">My Orders</a></li>
+        <li><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+<div class="page-header">
+    <h1><i class="fa fa-credit-card"></i> Complete Payment</h1>
+    <p>Secure checkout for your order</p>
+</div>
+
+<div class="section">
+    <div th:if="${error}" class="alert alert-error"><i class="fa fa-circle-exclamation"></i> <span th:text="${error}"></span></div>
+    <div class="payment-layout">
+        <!-- PAYMENT FORM -->
+        <div>
+            <div class="card" style="border-radius:var(--radius-lg); margin-bottom:1.5rem;">
+                <div class="card-body" style="padding:2rem;">
+                    <h2 style="font-family:'Playfair Display',serif; margin-bottom:1.5rem;">Payment Method</h2>
+
+                    <!-- METHOD SELECTION -->
+                    <div style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+                        <div class="method-tab selected" id="cardTab" onclick="selectMethod('CARD')">
+                            <i class="fa fa-credit-card" style="color:var(--primary); font-size:1.3rem;"></i>
+                            <div><strong>Credit / Debit Card</strong><br/><span style="font-size:.78rem; color:var(--text-muted);">VISA, Mastercard, Amex</span></div>
+                        </div>
+                        <div class="method-tab" id="cashTab" onclick="selectMethod('CASH')">
+                            <i class="fa fa-money-bill-wave" style="color:var(--success); font-size:1.3rem;"></i>
+                            <div><strong>Cash on Delivery</strong><br/><span style="font-size:.78rem; color:var(--text-muted);">Pay when delivered</span></div>
+                        </div>
+                    </div>
+
+                    <form method="post" th:action="@{/payment/process}" id="paymentForm">
+                        <input type="hidden" name="orderId" th:value="${order.id}"/>
+                        <input type="hidden" name="method" id="methodInput" value="CARD"/>
+
+                        <!-- CARD FIELDS -->
+                        <div id="cardFields">
+                            <div class="form-group">
+                                <label class="form-label">Card Number</label>
+                                <input type="text" name="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Card Holder Name</label>
+                                    <input type="text" name="cardHolder" class="form-control" placeholder="Kasun Perera"/>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Card Type</label>
+                                    <select name="cardType" class="form-select">
+                                        <option value="VISA">VISA</option>
+                                        <option value="MASTERCARD">Mastercard</option>
+                                        <option value="AMEX">American Express</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Expiry Date</label>
+                                    <input type="text" class="form-control" placeholder="MM/YY" maxlength="5"/>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">CVV</label>
+                                    <input type="text" class="form-control" placeholder="123" maxlength="3"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CASH FIELDS -->
+                        <div id="cashFields" style="display:none;">
+                            <div class="alert alert-info"><i class="fa fa-info-circle"></i> Your order will be confirmed and delivered. Please have cash ready upon delivery.</div>
+                            <div class="form-group">
+                                <label class="form-label">Amount to Pay</label>
+                                <input type="number" name="amountTendered" class="form-control"
+                                       th:value="${order.totalAmount}" step="0.01" readonly style="background:#f0f0f0;"/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:1rem;">
+                            <i class="fa fa-lock"></i> Pay LKR <span th:text="${order.totalAmount}">0</span>
+                        </button>
+                    </form>
+
+                    <div style="text-align:center; margin-top:1rem; font-size:.8rem; color:var(--text-muted);">
+                        <i class="fa fa-shield-halved"></i> Secured with 256-bit SSL encryption
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDER SUMMARY SIDEBAR -->
+        <div>
+            <div class="card" style="border-radius:var(--radius-lg); position:sticky; top:88px;">
+                <div style="background:linear-gradient(135deg,var(--dark),var(--dark2)); color:white; padding:1.2rem 1.5rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+                    <h3 style="font-family:'Playfair Display',serif;">Order Summary</h3>
+                    <div style="font-size:.82rem; opacity:.7;" th:text="${order.restaurantName}">Restaurant</div>
+                </div>
+                <div class="card-body">
+                    <div th:each="itemName,iter : ${order.itemNames}"
+                         style="display:flex; justify-content:space-between; padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.88rem;">
+                        <span th:text="${itemName + ' × ' + order.quantities[iter.index]}">Item</span>
+                        <span style="font-weight:600;" th:text="'LKR ' + ${#numbers.formatDecimal(order.itemPrices[iter.index] * order.quantities[iter.index],0,0)}">LKR</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:.5rem 0; font-size:.85rem; color:var(--text-muted);">
+                        <span>Delivery Fee</span>
+                        <span th:text="'LKR ' + ${order.deliveryFee}">LKR</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:.6rem 0; font-weight:700; font-size:1.2rem; color:var(--primary);">
+                        <span>Total</span>
+                        <span th:text="'LKR ' + ${order.totalAmount}">LKR</span>
+                    </div>
+                    <div style="padding:.7rem; background:#f9f9fb; border-radius:8px; font-size:.82rem; color:var(--text-muted);">
+                        <i class="fa fa-map-marker-alt" style="color:var(--primary)"></i>
+                        <span th:text="${order.deliveryAddress}">Address</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+<script>
+    function selectMethod(method) {
+        document.getElementById('methodInput').value = method;
+        document.getElementById('cardFields').style.display = method === 'CARD' ? 'block' : 'none';
+        document.getElementById('cashFields').style.display = method === 'CASH' ? 'block' : 'none';
+        document.getElementById('cardTab').classList.toggle('selected', method === 'CARD');
+        document.getElementById('cashTab').classList.toggle('selected', method === 'CASH');
+    }
+    function formatCard(input) {
+        let v = input.value.replace(/\D/g, '').substring(0, 16);
+        input.value = v.replace(/(.{4})/g, '$1 ').trim();
+    }
+</script>
+</body>
+</html>

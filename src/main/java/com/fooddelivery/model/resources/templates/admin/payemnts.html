@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payments - Admin - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span>
+        <span style="font-size:.7rem;background:var(--accent);color:#1a1a1a;padding:.1rem .5rem;border-radius:6px;margin-left:.4rem;">ADMIN</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/}">View Site</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+<div class="layout-admin">
+    <aside class="admin-sidebar">
+        <div class="sidebar-section">Dashboard</div>
+        <a th:href="@{/admin/dashboard}"><i class="fa fa-gauge-high"></i> Overview</a>
+        <div class="sidebar-section">Management</div>
+        <a th:href="@{/admin/users}"><i class="fa fa-users"></i> Users</a>
+        <a th:href="@{/admin/restaurants}"><i class="fa fa-store"></i> Restaurants</a>
+        <a th:href="@{/admin/food}"><i class="fa fa-utensils"></i> Food Items</a>
+        <a th:href="@{/admin/orders}"><i class="fa fa-list-alt"></i> Orders</a>
+        <a th:href="@{/admin/payments}" class="active"><i class="fa fa-credit-card"></i> Payments</a>
+        <a th:href="@{/admin/reviews}"><i class="fa fa-star"></i> Reviews</a>
+        <div class="sidebar-section">Site</div>
+        <a th:href="@{/}"><i class="fa fa-globe"></i> View Site</a>
+        <a th:href="@{/logout}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+    </aside>
+    <main class="admin-main">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+            <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;"><i class="fa fa-credit-card" style="color:var(--primary)"></i> Payment Management</h1>
+            <div style="background:white;border-radius:var(--radius);padding:.8rem 1.4rem;box-shadow:var(--shadow);">
+                <span style="color:var(--text-muted);font-size:.8rem;">Total Revenue</span>
+                <div style="font-size:1.4rem;font-weight:700;color:var(--success);" th:text="'LKR ' + ${#numbers.formatDecimal(totalRevenue,0,0)}">LKR 0</div>
+            </div>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success"><i class="fa fa-circle-check"></i> <span th:text="${success}"></span></div>
+
+        <div class="card" style="border-radius:var(--radius-lg);">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr><th>Payment ID</th><th>Order ID</th><th>Customer</th><th>Method</th><th>Amount</th><th>Status</th><th>Transaction Ref</th><th>Date</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p : ${payments}">
+                        <td style="font-family:monospace;font-size:.75rem;" th:text="${p.id}">PAY</td>
+                        <td style="font-family:monospace;font-size:.75rem;" th:text="${p.orderId}">ORD</td>
+                        <td style="font-size:.82rem;" th:text="${p.customerId}">Customer</td>
+                        <td>
+                            <span th:if="${p.method=='CARD'}"  class="badge badge-info">💳 Card</span>
+                            <span th:if="${p.method=='CASH'}"  class="badge badge-success">💵 Cash</span>
+                        </td>
+                        <td style="font-weight:700;color:var(--primary);" th:text="'LKR ' + ${p.amount}">LKR</td>
+                        <td>
+                <span th:class="${p.status=='COMPLETED'}?'badge badge-success':(${p.status=='FAILED'}?'badge badge-danger':'badge badge-warning')"
+                      th:text="${p.status}">Status</span>
+                        </td>
+                        <td style="font-family:monospace;font-size:.72rem;" th:text="${p.transactionRef}">TXN</td>
+                        <td style="font-size:.78rem;" th:text="${p.paymentDateTime}">Date</td>
+                        <td style="white-space:nowrap;">
+                            <form th:action="@{'/admin/payments/update/' + ${p.id}}" method="post" style="display:inline;">
+                                <select name="status" class="form-select" style="padding:.25rem .4rem;font-size:.75rem;width:auto;display:inline;">
+                                    <option value="COMPLETED" th:selected="${p.status=='COMPLETED'}">Completed</option>
+                                    <option value="PENDING"   th:selected="${p.status=='PENDING'}">Pending</option>
+                                    <option value="FAILED"    th:selected="${p.status=='FAILED'}">Failed</option>
+                                    <option value="REFUNDED"  th:selected="${p.status=='REFUNDED'}">Refunded</option>
+                                </select>
+                                <button class="btn btn-sm btn-primary" style="margin-left:.2rem;">✓</button>
+                            </form>
+                            <form th:action="@{'/admin/payments/delete/' + ${p.id}}" method="post"
+                                  style="display:inline;" onsubmit="return confirm('Delete this payment record?')">
+                                <button class="btn btn-sm btn-danger" style="margin-left:.2rem;"><i class="fa fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
+            Total: <strong th:text="${#lists.size(payments)}">0</strong> payment records
+        </p>
+    </main>
+</div>
+</body>
+</html>

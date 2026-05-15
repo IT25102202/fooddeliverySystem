@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payment Confirmed - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/order/history}">My Orders</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+
+<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
+    <div class="card fade-in" style="max-width:520px; width:100%; border-radius:var(--radius-lg); text-align:center; overflow:hidden;">
+        <div style="background:linear-gradient(135deg,var(--success),#059669); color:white; padding:3rem 2rem;">
+            <div style="font-size:4rem; margin-bottom:1rem;">🎉</div>
+            <h1 style="font-family:'Playfair Display',serif; font-size:2rem; margin-bottom:.5rem;">Payment Confirmed!</h1>
+            <p style="opacity:.85;">Your order has been placed successfully.</p>
+        </div>
+        <div class="card-body" style="padding:2rem;">
+            <div style="background:#f9f9fb; border-radius:12px; padding:1.2rem; margin-bottom:1.5rem; text-align:left;">
+                <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.9rem;"><span style="color:var(--text-muted);">Payment ID</span><strong th:text="${payment.id}">PAY001</strong></div>
+                <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.9rem;"><span style="color:var(--text-muted);">Order ID</span><strong th:text="${payment.orderId}">ORD001</strong></div>
+                <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.9rem;" th:if="${order != null}"><span style="color:var(--text-muted);">Restaurant</span><strong th:text="${order.restaurantName}">Restaurant</strong></div>
+                <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.9rem;"><span style="color:var(--text-muted);">Method</span><strong th:text="${payment.method}">CARD</strong></div>
+                <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.9rem;"><span style="color:var(--text-muted);">Transaction Ref</span><strong th:text="${payment.transactionRef}">TXN</strong></div>
+                <hr style="margin:.7rem 0; border-color:var(--border);"/>
+                <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:700; color:var(--primary);"><span>Amount Paid</span><span th:text="'LKR ' + ${payment.amount}">LKR</span></div>
+            </div>
+            <p style="color:var(--text-muted); font-size:.88rem; margin-bottom:1.5rem;">
+                Your food is being prepared. Estimated delivery: <strong>30–45 minutes</strong>
+            </p>
+            <div style="display:flex; flex-direction:column; gap:.8rem;">
+                <a th:href="@{'/order/status/' + ${payment.orderId}}" class="btn btn-primary btn-lg"><i class="fa fa-motorcycle"></i> Track My Order</a>
+                <!-- PDF Invoice — only for CARD payments -->
+                <a th:if="${payment.method == 'CARD'}"
+                   th:href="@{'/payment/invoice/' + ${payment.id}}"
+                   class="btn btn-dark btn-lg"
+                   style="background:#1a1a1a; display:flex; align-items:center; justify-content:center; gap:.5rem;">
+                    🧾 Download Invoice (PDF)
+                </a>
+                <a th:href="@{/restaurants}" class="btn btn-outline">Order More Food</a>
+            </div>
+        </div>
+    </div>
+</div>
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+</body>
+</html>

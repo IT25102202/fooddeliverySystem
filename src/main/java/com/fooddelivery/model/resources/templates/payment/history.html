@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payment History - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/order/history}">My Orders</a></li>
+        <li><a th:href="@{/payment/history}" class="active">Payments</a></li>
+        <li><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+<div class="page-header">
+    <h1><i class="fa fa-receipt"></i> Payment History</h1>
+    <p>All your payment transactions</p>
+</div>
+<div class="section">
+    <div th:if="${#lists.isEmpty(payments)}" style="text-align:center; padding:4rem 2rem;">
+        <div style="font-size:4rem; margin-bottom:1rem;">💳</div>
+        <h3 style="font-family:'Playfair Display',serif; margin-bottom:.5rem;">No Payments Yet</h3>
+        <p style="color:var(--text-muted); margin-bottom:1.5rem;">Your payment history will appear here after your first order.</p>
+        <a th:href="@{/restaurants}" class="btn btn-primary btn-lg">Start Ordering</a>
+    </div>
+    <div th:if="${!#lists.isEmpty(payments)}">
+        <div class="table-wrap card" style="border-radius:var(--radius-lg);">
+            <table>
+                <thead>
+                <tr><th>Payment ID</th><th>Order ID</th><th>Method</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${payments}">
+                    <td style="font-family:monospace; font-size:.8rem;" th:text="${p.id}">PAY</td>
+                    <td><a th:href="@{'/order/status/' + ${p.orderId}}" style="color:var(--primary);" th:text="${p.orderId}">ORD</a></td>
+                    <td>
+                        <span th:if="${p.method == 'CARD'}" class="badge badge-info">💳 Card</span>
+                        <span th:if="${p.method == 'CASH'}" class="badge badge-success">💵 Cash</span>
+                    </td>
+                    <td style="font-weight:700; color:var(--primary);" th:text="'LKR ' + ${p.amount}">LKR</td>
+                    <td>
+                        <span th:class="${p.status == 'COMPLETED'} ? 'badge badge-success' : 'badge badge-warning'" th:text="${p.status}">Status</span>
+                    </td>
+                    <td style="font-size:.82rem;" th:text="${p.paymentDateTime}">Date</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+</body>
+</html>
