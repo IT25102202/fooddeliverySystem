@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Orders - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/}">Home</a></li>
+    <li><a th:href="@{/restaurants}">Restaurants</a></li>
+    <li><a th:href="@{/order/history}" class="active">My Orders</a></li>
+    <li><a th:href="@{/payment/history}">Payments</a></li>
+    <li><a th:href="@{/review/my}">Reviews</a></li>
+    <li><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="page-header">
+  <h1><i class="fa fa-list-alt"></i> My Orders</h1>
+  <p>Track all your food orders here</p>
+</div>
+<div class="section">
+  <div th:if="${success}" class="alert alert-success"><i class="fa fa-circle-check"></i> <span th:text="${success}"></span></div>
+  <div th:if="${error}"   class="alert alert-error"><i class="fa fa-circle-exclamation"></i> <span th:text="${error}"></span></div>
+
+  <div th:if="${#lists.isEmpty(orders)}" style="text-align:center; padding:4rem 2rem;">
+    <div style="font-size:4rem; margin-bottom:1rem;">🛒</div>
+    <h3 style="font-family:'Playfair Display',serif; margin-bottom:.5rem;">No Orders Yet</h3>
+    <p style="color:var(--text-muted); margin-bottom:1.5rem;">You haven't placed any orders yet. Discover amazing restaurants!</p>
+    <a th:href="@{/restaurants}" class="btn btn-primary btn-lg"><i class="fa fa-store"></i> Browse Restaurants</a>
+  </div>
+
+  <div th:each="order : ${orders}" class="card fade-in" style="margin-bottom:1.5rem; border-radius:var(--radius-lg); overflow:hidden;">
+    <!-- Order Header -->
+    <div style="background:linear-gradient(135deg,var(--dark),var(--dark2)); color:white; padding:1.2rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+      <div>
+        <div style="font-size:.75rem; opacity:.6; letter-spacing:1px; text-transform:uppercase;">Order ID</div>
+        <div style="font-weight:700; font-size:1rem;" th:text="${order.id}">ORD001</div>
+      </div>
+      <div>
+        <div style="font-size:.75rem; opacity:.6;">Restaurant</div>
+        <div style="font-weight:600;" th:text="${order.restaurantName}">Restaurant</div>
+      </div>
+      <div>
+        <div style="font-size:.75rem; opacity:.6;">Placed</div>
+        <div style="font-size:.85rem;" th:text="${order.orderDateTime}">Date</div>
+      </div>
+      <div style="text-align:right;">
+        <div th:class="'status-' + ${order.status}" style="font-size:1rem; padding:.3rem .8rem; background:rgba(255,255,255,.1); border-radius:8px;" th:text="${order.statusDisplay}">Status</div>
+      </div>
+    </div>
+
+    <!-- Order Body -->
+    <div style="padding:1.5rem; display:grid; grid-template-columns:1fr auto; gap:1.5rem; align-items:start; flex-wrap:wrap;">
+      <div>
+        <h4 style="margin-bottom:.8rem; color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:1px;">Items Ordered</h4>
+        <div th:each="itemName,iter : ${order.itemNames}"
+             style="display:flex; justify-content:space-between; padding:.3rem 0; font-size:.9rem; border-bottom:1px solid var(--border);">
+          <span th:text="${itemName + ' × ' + order.quantities[iter.index]}">Item x1</span>
+          <span style="font-weight:600;" th:text="'LKR ' + ${order.itemPrices[iter.index] * order.quantities[iter.index]}">LKR</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.85rem; color:var(--text-muted);">
+          <span>Delivery Fee</span>
+          <span th:text="'LKR ' + ${order.deliveryFee}">LKR 150</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:.5rem 0; font-weight:700; font-size:1.1rem; color:var(--primary);">
+          <span>Total</span>
+          <span th:text="'LKR ' + ${order.totalAmount}">LKR</span>
+        </div>
+        <div style="margin-top:.7rem; font-size:.82rem; color:var(--text-muted);">
+          <i class="fa fa-map-marker-alt"></i> <span th:text="${order.deliveryAddress}">Address</span>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:.6rem; min-width:140px;">
+        <a th:href="@{'/order/status/' + ${order.id}}" class="btn btn-outline btn-sm"><i class="fa fa-eye"></i> Track Order</a>
+        <a th:if="${order.status == 'DELIVERED'}" th:href="@{'/review/submit/' + ${order.id}}" class="btn btn-accent btn-sm"><i class="fa fa-star"></i> Review</a>
+        <form th:if="${order.canCancel()}" th:action="@{'/order/cancel/' + ${order.id}}" method="post"
+              onsubmit="return confirm('Cancel this order?')">
+          <button class="btn btn-danger btn-sm" style="width:100%;"><i class="fa fa-times"></i> Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+</body>
+</html>

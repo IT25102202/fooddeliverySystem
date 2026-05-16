@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Orders - Admin - FoodHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+    <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span>
+        <span style="font-size:.7rem;background:var(--accent);color:#1a1a1a;padding:.1rem .5rem;border-radius:6px;margin-left:.4rem;">ADMIN</span></a>
+    <ul class="nav-links">
+        <li><a th:href="@{/}">View Site</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+    </ul>
+</nav>
+<div class="layout-admin">
+    <aside class="admin-sidebar">
+        <div class="sidebar-section">Dashboard</div>
+        <a th:href="@{/admin/dashboard}"><i class="fa fa-gauge-high"></i> Overview</a>
+        <div class="sidebar-section">Management</div>
+        <a th:href="@{/admin/users}"><i class="fa fa-users"></i> Users</a>
+        <a th:href="@{/admin/restaurants}"><i class="fa fa-store"></i> Restaurants</a>
+        <a th:href="@{/admin/food}"><i class="fa fa-utensils"></i> Food Items</a>
+        <a th:href="@{/admin/orders}" class="active"><i class="fa fa-list-alt"></i> Orders</a>
+        <a th:href="@{/admin/payments}"><i class="fa fa-credit-card"></i> Payments</a>
+        <a th:href="@{/admin/reviews}"><i class="fa fa-star"></i> Reviews</a>
+        <div class="sidebar-section">Site</div>
+        <a th:href="@{/}"><i class="fa fa-globe"></i> View Site</a>
+        <a th:href="@{/logout}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+    </aside>
+    <main class="admin-main">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+            <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;"><i class="fa fa-list-alt" style="color:var(--primary)"></i> Order Management</h1>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success"><i class="fa fa-circle-check"></i> <span th:text="${success}"></span></div>
+
+        <!-- Status Filter -->
+        <div style="display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+            <a th:href="@{/admin/orders}" class="btn btn-sm" th:classappend="${filterStatus == ''} ? 'btn-primary' : 'btn-outline'">All</a>
+            <a th:href="@{/admin/orders(status='PENDING')}"          class="btn btn-sm" th:classappend="${filterStatus == 'PENDING'} ? 'btn-primary' : 'btn-outline'">Pending</a>
+            <a th:href="@{/admin/orders(status='CONFIRMED')}"        class="btn btn-sm" th:classappend="${filterStatus == 'CONFIRMED'} ? 'btn-primary' : 'btn-outline'">Confirmed</a>
+            <a th:href="@{/admin/orders(status='PREPARING')}"        class="btn btn-sm" th:classappend="${filterStatus == 'PREPARING'} ? 'btn-primary' : 'btn-outline'">Preparing</a>
+            <a th:href="@{/admin/orders(status='OUT_FOR_DELIVERY')}" class="btn btn-sm" th:classappend="${filterStatus == 'OUT_FOR_DELIVERY'} ? 'btn-primary' : 'btn-outline'">Out for Delivery</a>
+            <a th:href="@{/admin/orders(status='DELIVERED')}"        class="btn btn-sm" th:classappend="${filterStatus == 'DELIVERED'} ? 'btn-primary' : 'btn-outline'">Delivered</a>
+            <a th:href="@{/admin/orders(status='CANCELLED')}"        class="btn btn-sm" th:classappend="${filterStatus == 'CANCELLED'} ? 'btn-primary' : 'btn-outline'">Cancelled</a>
+        </div>
+
+        <div class="card" style="border-radius:var(--radius-lg);">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr><th>Order ID</th><th>Customer</th><th>Restaurant</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="o : ${orders}">
+                        <td style="font-family:monospace;font-size:.78rem;" th:text="${o.id}">ORD</td>
+                        <td style="font-size:.85rem;" th:text="${o.customerId}">Customer</td>
+                        <td style="font-size:.85rem;" th:text="${o.restaurantName}">Restaurant</td>
+                        <td style="font-size:.8rem;">
+                            <span th:each="n, i : ${o.itemNames}" th:text="${n + (i.last ? '' : ', ')}">Item</span>
+                        </td>
+                        <td style="font-weight:700;color:var(--primary);" th:text="'LKR ' + ${o.totalAmount}">LKR</td>
+                        <td><span th:class="'status-' + ${o.status}" th:text="${o.statusDisplay}">Status</span></td>
+                        <td style="font-size:.78rem;" th:text="${o.orderDateTime}">Date</td>
+                        <td style="white-space:nowrap;">
+                            <form th:action="@{'/admin/orders/status/' + ${o.id}}" method="post" style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;">
+                                <select name="status" class="form-select" style="padding:.3rem .4rem;font-size:.75rem;width:auto;">
+                                    <option value="PENDING"          th:selected="${o.status=='PENDING'}">Pending</option>
+                                    <option value="CONFIRMED"        th:selected="${o.status=='CONFIRMED'}">Confirmed</option>
+                                    <option value="PREPARING"        th:selected="${o.status=='PREPARING'}">Preparing</option>
+                                    <option value="OUT_FOR_DELIVERY" th:selected="${o.status=='OUT_FOR_DELIVERY'}">Out for Delivery</option>
+                                    <option value="DELIVERED"        th:selected="${o.status=='DELIVERED'}">Delivered</option>
+                                    <option value="CANCELLED"        th:selected="${o.status=='CANCELLED'}">Cancelled</option>
+                                </select>
+                                <button class="btn btn-sm btn-primary">✓</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
+            Showing <strong th:text="${#lists.size(orders)}">0</strong> orders
+        </p>
+    </main>
+</div>
+</body>
+</html>

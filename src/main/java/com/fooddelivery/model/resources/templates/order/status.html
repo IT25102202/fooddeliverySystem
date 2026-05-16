@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Status - FoodHub</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" th:href="@{/}"><div class="logo-icon">🍔</div>Food<span>Hub</span></a>
+  <ul class="nav-links">
+    <li><a th:href="@{/order/history}">My Orders</a></li>
+    <li><a th:href="@{/profile}"><i class="fa fa-user"></i> [[${user.username}]]</a></li>
+    <li><a th:href="@{/logout}">Logout</a></li>
+  </ul>
+</nav>
+<div class="page-header">
+  <h1><i class="fa fa-motorcycle"></i> Order Tracking</h1>
+  <p th:text="'Order #' + ${order.id}">Order</p>
+</div>
+
+<div class="section" style="max-width:800px;">
+  <!-- STATUS CARD -->
+  <div class="card fade-in" style="border-radius:var(--radius-lg); margin-bottom:2rem;">
+    <div style="background:linear-gradient(135deg,var(--primary),#ff7043); color:white; padding:2rem; text-align:center;">
+      <div style="font-size:3rem; margin-bottom:.5rem;">
+        <th:block th:switch="${order.status}">
+          <span th:case="'PENDING'">⏳</span>
+          <span th:case="'CONFIRMED'">✅</span>
+          <span th:case="'PREPARING'">👨‍🍳</span>
+          <span th:case="'OUT_FOR_DELIVERY'">🚗</span>
+          <span th:case="'DELIVERED'">🎉</span>
+          <span th:case="'CANCELLED'">❌</span>
+        </th:block>
+      </div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:1.8rem;" th:text="${order.statusDisplay}">Status</h2>
+      <p style="opacity:.85; margin-top:.4rem;" th:text="${order.restaurantName}">Restaurant</p>
+    </div>
+    <div class="card-body" style="padding:2rem;">
+      <!-- PROGRESS TIMELINE -->
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot active"></div>
+          <h5>Order Placed</h5>
+          <p th:text="${order.orderDateTime}">Time</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" th:classappend="${order.status != 'PENDING'} ? 'active'"></div>
+          <h5>Order Confirmed</h5>
+          <p>Restaurant accepted your order</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" th:classappend="${order.status == 'PREPARING' or order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED'} ? 'active'"></div>
+          <h5>Preparing Your Food</h5>
+          <p>Kitchen is preparing your order</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" th:classappend="${order.status == 'OUT_FOR_DELIVERY' or order.status == 'DELIVERED'} ? 'active'"></div>
+          <h5>Out for Delivery</h5>
+          <p>Your order is on its way!</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" th:classappend="${order.status == 'DELIVERED'} ? 'active'"></div>
+          <h5>Delivered</h5>
+          <p th:text="${order.status == 'DELIVERED'} ? 'Order successfully delivered!' : 'Estimated: ' + ${order.estimatedDelivery}">ETA</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER DETAILS -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; flex-wrap:wrap;">
+    <div class="card" style="border-radius:var(--radius-lg);">
+      <div class="card-body">
+        <h3 style="font-family:'Playfair Display',serif; margin-bottom:1rem;">Items Ordered</h3>
+        <div th:each="itemName,iter : ${order.itemNames}"
+             style="display:flex; justify-content:space-between; padding:.4rem 0; border-bottom:1px solid var(--border); font-size:.9rem;">
+          <span th:text="${itemName + ' × ' + order.quantities[iter.index]}">Item</span>
+          <span style="font-weight:600;" th:text="'LKR ' + ${order.itemPrices[iter.index] * order.quantities[iter.index]}">LKR</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:.4rem 0; font-size:.85rem; color:var(--text-muted);">
+          <span>Delivery Fee</span><span th:text="'LKR ' + ${order.deliveryFee}">LKR</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.1rem; color:var(--primary); padding-top:.4rem;">
+          <span>Total</span><span th:text="'LKR ' + ${order.totalAmount}">LKR</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="border-radius:var(--radius-lg);">
+      <div class="card-body">
+        <h3 style="font-family:'Playfair Display',serif; margin-bottom:1rem;">Delivery Info</h3>
+        <div style="font-size:.9rem; margin-bottom:.7rem;"><span style="color:var(--text-muted);">Address:</span><br/><strong th:text="${order.deliveryAddress}">Address</strong></div>
+        <div style="font-size:.9rem; margin-bottom:.7rem;" th:if="${payment != null}">
+          <span style="color:var(--text-muted);">Payment:</span><br/>
+          <strong><span th:text="${payment.method}">CARD</span> — <span th:text="${payment.status}">COMPLETED</span></strong>
+        </div>
+        <div style="font-size:.9rem;" th:if="${order.specialInstructions != null and !order.specialInstructions.isEmpty()}">
+          <span style="color:var(--text-muted);">Notes:</span><br/>
+          <em th:text="${order.specialInstructions}">Instructions</em>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-top:2rem; flex-wrap:wrap;">
+    <a th:href="@{/order/history}" class="btn btn-outline"><i class="fa fa-arrow-left"></i> All Orders</a>
+    <a th:if="${order.status == 'DELIVERED'}" th:href="@{'/review/submit/' + ${order.id}}" class="btn btn-accent">
+      <i class="fa fa-star"></i> Leave a Review
+    </a>
+  </div>
+</div>
+<footer class="footer"><div class="footer-bottom">&copy; 2025 FoodHub</div></footer>
+</body>
+</html>
